@@ -1,8 +1,9 @@
 package com.hse.leihsy.repository;
 
 import com.hse.leihsy.model.entity.Item;
-import com.hse.leihsy.model.entity.ItemStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,15 +12,18 @@ import java.util.Optional;
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
 
-    // Finde Item per Inventarnummer
-    Optional<Item> findByInventoryNumber(String inventoryNumber);
+    // Alle aktiven Items
+    @Query("SELECT i FROM Item i WHERE i.deletedAt IS NULL")
+    List<Item> findAllActive();
 
-    // Finde Items per Status
-    List<Item> findByStatus(ItemStatus status);
+    // Items eines Products
+    @Query("SELECT i FROM Item i WHERE i.product.id = :productId AND i.deletedAt IS NULL")
+    List<Item> findByProductId(@Param("productId") Long productId);
 
-    // Finde Items per Kategorie
-    List<Item> findByCategoryId(Long categoryId);
+    // Item nach Inventarnummer
+    Optional<Item> findByInvNumber(String invNumber);
 
-    // Suche nach Name (Case-insensitive)
-    List<Item> findByNameContainingIgnoreCase(String name);
+    // Zaehle verfuegbare Items eines Products
+    @Query("SELECT COUNT(i) FROM Item i WHERE i.product.id = :productId AND i.deletedAt IS NULL")
+    Long countByProductId(@Param("productId") Long productId);
 }

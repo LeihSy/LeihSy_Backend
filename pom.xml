@@ -57,13 +57,26 @@
 			<optional>true</optional>
 		</dependency>
 
-        <!-- H2 Database -->
+     <!-- ==========================================
+          Datenbank Treiber
+          ========================================== -->
+        <!-- H2 Database (Development) -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
+        <!-- PostgreSQL Driver (Production) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ==========================================
+             Testing
+             ========================================== -->
         <!-- Spring Boot Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -71,11 +84,15 @@
 			<scope>test</scope>
 		</dependency>
 
-        <!-- PostgreSQL Driver -->
+
+        <!-- ==========================================
+             JSON / Jackson
+             ========================================== -->
+        <!-- Fuer JSON-Spalten (accessories, etc.) -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
+            <groupId>com.vladmihalcea</groupId>
+            <artifactId>hibernate-types-60</artifactId>
+            <version>2.21.1</version>
         </dependency>
 
 	</dependencies>

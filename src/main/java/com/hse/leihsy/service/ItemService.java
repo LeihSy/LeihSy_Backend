@@ -1,129 +1,118 @@
 package com.hse.leihsy.service;
 
-import com.hse.leihsy.model.dto.ItemCreateDTO;
-import com.hse.leihsy.model.dto.ItemDTO;
-import com.hse.leihsy.model.entity.Category;
 import com.hse.leihsy.model.entity.Item;
-import com.hse.leihsy.model.entity.ItemStatus;
-import com.hse.leihsy.repository.CategoryRepository;
+import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.repository.ItemRepository;
+import com.hse.leihsy.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ItemService {
 
     private final ItemRepository itemRepository;
-    private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
-    // Constructor Injection
-    public ItemService(ItemRepository itemRepository, CategoryRepository categoryRepository) {
+    public ItemService(ItemRepository itemRepository, ProductRepository productRepository) {
         this.itemRepository = itemRepository;
-        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
-    // Alle Items abrufen
-    public List<ItemDTO> getAllItems() {
-        return itemRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    // Alle aktiven Items abrufen
+    public List<Item> getAllItems() {
+        return itemRepository.findAllActive();
     }
 
     // Item per ID abrufen
-    public ItemDTO getItemById(Long id) {
-        Item item = itemRepository.findById(id)
+    public Item getItemById(Long id) {
+        return itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + id));
-        return convertToDTO(item);
+    }
+
+    // Item per Inventarnummer abrufen
+    public Item getItemByInvNumber(String invNumber) {
+        return itemRepository.findByInvNumber(invNumber)
+                .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + invNumber));
+    }
+
+    // Items eines Products abrufen
+    public List<Item> getItemsByProduct(Long productId) {
+        return itemRepository.findByProductId(productId);
+    }
+
+    // Anzahl Items eines Products
+    public Long countItemsByProduct(Long productId) {
+        return itemRepository.countByProductId(productId);
     }
 
     // Neues Item erstellen
-    public ItemDTO createItem(ItemCreateDTO createDTO) {
+    public Item createItem(String invNumber, String owner, Long productId) {
         // Prüfe ob Inventarnummer bereits existiert
-        if (itemRepository.findByInventoryNumber(createDTO.getInventoryNumber()).isPresent()) {
-            throw new RuntimeException("Inventarnummer existiert bereits: " + createDTO.getInventoryNumber());
+        if (itemRepository.findByInvNumber(invNumber).isPresent()) {
+            throw new RuntimeException("Inventarnummer existiert bereits: " + invNumber);
         }
 
-        // Lade Kategorie
-        Category category = categoryRepository.findById(createDTO.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + createDTO.getCategoryId()));
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + productId));
 
-        // Erstelle Item
-        Item item = new Item();
-        item.setInventoryNumber(createDTO.getInventoryNumber());
-        item.setName(createDTO.getName());
-        item.setDescription(createDTO.getDescription());
-        item.setCategory(category);
-        item.setLocation(createDTO.getLocation());
-        item.setImageUrl(createDTO.getImageUrl());
-        item.setAccessories(createDTO.getAccessories());
-        item.setStatus(ItemStatus.AVAILABLE);
+        Item item = new Item(invNumber, owner, product);
+        return itemRepository.save(item);
+    }
 
-        Item savedItem = itemRepository.save(item);
-        return convertToDTO(savedItem);
+    // Mehrere Items auf einmal erstellen
+    public List<Item> createItemSet(String invNumberPrefix, String owner, Long productId, int count) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + productId));
+
+        List<Item> items = new java.util.ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            String invNumber = invNumberPrefix + "-" + String.format("%03d", i);
+
+            if (itemRepository.findByInvNumber(invNumber).isPresent()) {
+                continue;
+            }
+
+            Item item = new Item(invNumber, owner, product);
+            items.add(itemRepository.save(item));
+        }
+        return items;
     }
 
     // Item aktualisieren
-    public ItemDTO updateItem(Long id, ItemCreateDTO updateDTO) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + id));
+    public Item updateItem(Long id, String invNumber, String owner) {
+        Item item = getItemById(id);
 
-        Category category = categoryRepository.findById(updateDTO.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + updateDTO.getCategoryId()));
-
-        item.setInventoryNumber(updateDTO.getInventoryNumber());
-        item.setName(updateDTO.getName());
-        item.setDescription(updateDTO.getDescription());
-        item.setCategory(category);
-        item.setLocation(updateDTO.getLocation());
-        item.setImageUrl(updateDTO.getImageUrl());
-        item.setAccessories(updateDTO.getAccessories());
-
-        Item updatedItem = itemRepository.save(item);
-        return convertToDTO(updatedItem);
-    }
-
-    // Item löschen
-    public void deleteItem(Long id) {
-        if (!itemRepository.existsById(id)) {
-            throw new RuntimeException("Item nicht gefunden: " + id);
+        if (!item.getInvNumber().equals(invNumber)) {
+            if (itemRepository.findByInvNumber(invNumber).isPresent()) {
+                throw new RuntimeException("Inventarnummer existiert bereits: " + invNumber);
+            }
         }
-        itemRepository.deleteById(id);
+
+        item.setInvNumber(invNumber);
+        item.setOwner(owner);
+        return itemRepository.save(item);
     }
 
-    // Suche Items
-    public List<ItemDTO> searchItems(String keyword) {
-        return itemRepository.findByNameContainingIgnoreCase(keyword)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    // Item löschen (Soft-Delete)
+    public void deleteItem(Long id) {
+        Item item = getItemById(id);
+        item.softDelete();
+        itemRepository.save(item);
     }
 
-    // Items per Status
-    public List<ItemDTO> getItemsByStatus(ItemStatus status) {
-        return itemRepository.findByStatus(status)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    // Prüfe ob Item verfügbar ist
+    public boolean isItemAvailable(Long itemId) {
+        Item item = getItemById(itemId);
+        return item.isAvailable();
     }
 
-    // Helper: Entity -> DTO
-    private ItemDTO convertToDTO(Item item) {
-        ItemDTO dto = new ItemDTO();
-        dto.setId(item.getId());
-        dto.setInventoryNumber(item.getInventoryNumber());
-        dto.setName(item.getName());
-        dto.setDescription(item.getDescription());
-        dto.setCategoryId(item.getCategory().getId());
-        dto.setCategoryName(item.getCategory().getName());
-        dto.setLocation(item.getLocation());
-        dto.setImageUrl(item.getImageUrl());
-        dto.setStatus(item.getStatus());
-        dto.setAccessories(item.getAccessories());
-        return dto;
+    // Prüfe Verfügbarkeit für Zeitraum
+    public boolean isItemAvailableForPeriod(Long itemId, LocalDateTime startDate, LocalDateTime endDate) {
+        Item item = getItemById(itemId);
+        return item.isAvailableForPeriod(startDate, endDate);
     }
 }

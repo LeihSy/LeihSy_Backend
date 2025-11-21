@@ -1,185 +1,144 @@
 package com.hse.leihsy.model.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Item Entity - Physisches Exemplar eines Products.
+ * Beispiel: Meta Quest 3 mit Inventarnummer VR-001
+ *
+ * Items sind die konkreten Geräte die ausgeliehen werden.
+ */
 @Entity
 @Table(name = "items")
-public class Item {
+public class Item extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /**
+     * ID aus InSy
+     */
+    @Column(name = "insy_id")
+    private Long insyId;
 
-    @Column(nullable = false, unique = true)
-    private String inventoryNumber;
+    /**
+     * Besitzer des Gegenstands
+     * NICHT der Verleiher - der wird über Product.lender ermittelt
+     */
+    @Column(name = "owner", length = 255)
+    private String owner;
 
-    @Column(nullable = false)
-    private String name;
+    /**
+     * Inventarnummer (eindeutig, z.B. "VR-001", "CAM-042")
+     */
+    @Column(name = "invnumber", length = 255, unique = true)
+    private String invNumber;
 
-    @Column(length = 2000)
-    private String description;
+    // =========================================    // Relationships
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
+    /**
+     * Produkt-Modell zu dem dieses Item gehört
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    private String location;
-
-    private String imageUrl;
-
-    @Enumerated(EnumType.STRING)
-    private ItemStatus status = ItemStatus.AVAILABLE;
-
-    private String accessories;
-
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    /**
+     * Buchungen für dieses Item
+     */
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
+    private List<Booking> bookings = new ArrayList<>();
 
     // Constructors
-    public Item() {}
 
-    public Item(Long id, String inventoryNumber, String name, String description,
-                Category category, String location, String imageUrl,
-                ItemStatus status, String accessories) {
-        this.id = id;
-        this.inventoryNumber = inventoryNumber;
-        this.name = name;
-        this.description = description;
-        this.category = category;
-        this.location = location;
-        this.imageUrl = imageUrl;
-        this.status = status;
-        this.accessories = accessories;
+    public Item() {
     }
 
-    // Getters
-    public Long getId() {
-        return id;
+    public Item(String invNumber, Product product) {
+        this.invNumber = invNumber;
+        this.product = product;
     }
 
-    public String getInventoryNumber() {
-        return inventoryNumber;
+    public Item(String invNumber, String owner, Product product) {
+        this.invNumber = invNumber;
+        this.owner = owner;
+        this.product = product;
     }
 
-    public String getName() {
-        return name;
+    // Helper Methods
+
+    /**
+     * Prüft ob dieses Item aktuell verfügbar ist.
+     * Verfügbar = keine aktive Buchung (PENDING, CONFIRMED, oder PICKED_UP)
+     */
+    public boolean isAvailable() {
+        return bookings.stream()
+                .filter(b -> b.getDeletedAt() == null)
+                .noneMatch(b -> {
+                    boolean hasReturnDate = b.getReturnDate() != null;
+                    return !hasReturnDate; // Nicht zurückgegeben = nicht verfügbar
+                });
     }
 
-    public String getDescription() {
-        return description;
+    /**
+     * Prüft Verfügbarkeit fuer einen bestimmten Zeitraum
+     */
+    public boolean isAvailableForPeriod(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        return bookings.stream()
+                .filter(b -> b.getDeletedAt() == null)
+                .filter(b -> b.getReturnDate() == null) // Nur aktive Buchungen
+                .noneMatch(b -> {
+                    // Zeitraum-Überschneidung prüfen
+                    java.time.LocalDateTime bookingStart = b.getStartDate();
+                    java.time.LocalDateTime bookingEnd = b.getEndDate();
+
+                    if (bookingStart == null || bookingEnd == null) {
+                        return false;
+                    }
+
+                    // Überschneidung: startDate <= bookingEnd AND endDate >= bookingStart
+                    return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
+                });
     }
 
-    public Category getCategory() {
-        return category;
+    // Getters and Setters
+
+    public Long getInsyId() {
+        return insyId;
     }
 
-    public String getLocation() {
-        return location;
+    public void setInsyId(Long insyId) {
+        this.insyId = insyId;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getOwner() {
+        return owner;
     }
 
-    public ItemStatus getStatus() {
-        return status;
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
-    public String getAccessories() {
-        return accessories;
+    public String getInvNumber() {
+        return invNumber;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public void setInvNumber(String invNumber) {
+        this.invNumber = invNumber;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public Product getProduct() {
+        return product;
     }
 
-    // Setters
-    public void setId(Long id) {
-        this.id = id;
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
-    public void setInventoryNumber(String inventoryNumber) {
-        this.inventoryNumber = inventoryNumber;
+    public List<Booking> getBookings() {
+        return bookings;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public void setStatus(ItemStatus status) {
-        this.status = status;
-    }
-
-    public void setAccessories(String accessories) {
-        this.accessories = accessories;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    // equals & hashCode
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Item item = (Item) o;
-        return Objects.equals(id, item.id) &&
-                Objects.equals(inventoryNumber, item.inventoryNumber);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, inventoryNumber);
-    }
-
-    // toString
-    @Override
-    public String toString() {
-        return "Item{" +
-                "id=" + id +
-                ", inventoryNumber='" + inventoryNumber + '\'' +
-                ", name='" + name + '\'' +
-                ", status=" + status +
-                '}';
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
     }
 }

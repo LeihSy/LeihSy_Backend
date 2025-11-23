@@ -1,8 +1,8 @@
 package com.hse.leihsy.controller;
 
-import com.hse.leihsy.model.dto.ItemCreateDTO;
 import com.hse.leihsy.model.dto.ItemDTO;
-import com.hse.leihsy.model.entity.ItemStatus;
+import com.hse.leihsy.model.dto.ItemCreateDTO;
+import com.hse.leihsy.model.entity.Item;
 import com.hse.leihsy.service.ItemService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/items")
@@ -18,55 +19,83 @@ public class ItemController {
 
     private final ItemService itemService;
 
-    // Constructor Injection (statt @RequiredArgsConstructor)
     public ItemController(ItemService itemService) {
         this.itemService = itemService;
     }
 
-    // GET /api/items - Alle Items
     @GetMapping
     public ResponseEntity<List<ItemDTO>> getAllItems() {
-        return ResponseEntity.ok(itemService.getAllItems());
+        List<Item> items = itemService.getAllItems();
+        List<ItemDTO> dtos = items.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
-    // GET /api/items/{id} - Item per ID
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getItemById(@PathVariable Long id) {
-        return ResponseEntity.ok(itemService.getItemById(id));
+        Item item = itemService.getItemById(id);
+        return ResponseEntity.ok(convertToDTO(item));
     }
 
-    // POST /api/items - Neues Item
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<List<ItemDTO>> getItemsByProduct(@PathVariable Long productId) {
+        List<Item> items = itemService.getItemsByProduct(productId);
+        List<ItemDTO> dtos = items.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/invnumber/{invNumber}")
+    public ResponseEntity<ItemDTO> getItemByInvNumber(@PathVariable String invNumber) {
+        Item item = itemService.getItemByInvNumber(invNumber);
+        return ResponseEntity.ok(convertToDTO(item));
+    }
+
     @PostMapping
     public ResponseEntity<ItemDTO> createItem(@Valid @RequestBody ItemCreateDTO createDTO) {
-        ItemDTO created = itemService.createItem(createDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        Item item = itemService.createItem(
+                createDTO.getInvNumber(),
+                createDTO.getOwner(),
+                createDTO.getProductId()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(item));
     }
 
-    // PUT /api/items/{id} - Item aktualisieren
     @PutMapping("/{id}")
     public ResponseEntity<ItemDTO> updateItem(
             @PathVariable Long id,
-            @Valid @RequestBody ItemCreateDTO updateDTO
-    ) {
-        return ResponseEntity.ok(itemService.updateItem(id, updateDTO));
+            @Valid @RequestBody ItemCreateDTO updateDTO) {
+
+        Item item = itemService.updateItem(
+                id,
+                updateDTO.getInvNumber(),
+                updateDTO.getOwner()
+        );
+        return ResponseEntity.ok(convertToDTO(item));
     }
 
-    // DELETE /api/items/{id} - Item löschen
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
         itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/items/search?keyword=... - Suche
-    @GetMapping("/search")
-    public ResponseEntity<List<ItemDTO>> searchItems(@RequestParam String keyword) {
-        return ResponseEntity.ok(itemService.searchItems(keyword));
-    }
+    private ItemDTO convertToDTO(Item item) {
+        ItemDTO dto = new ItemDTO();
+        dto.setId(item.getId());
+        dto.setInvNumber(item.getInvNumber());
+        dto.setOwner(item.getOwner());
+        dto.setAvailable(item.isAvailable());
+        dto.setCreatedAt(item.getCreatedAt());
+        dto.setUpdatedAt(item.getUpdatedAt());
 
-    // GET /api/items/status/{status} - Items per Status
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<ItemDTO>> getItemsByStatus(@PathVariable ItemStatus status) {
-        return ResponseEntity.ok(itemService.getItemsByStatus(status));
+        if (item.getProduct() != null) {
+            dto.setProductId(item.getProduct().getId());
+            dto.setProductName(item.getProduct().getName());
+        }
+
+        return dto;
     }
 }

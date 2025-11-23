@@ -6,90 +6,37 @@ import jakarta.validation.constraints.NotNull;
 public class ItemCreateDTO {
 
     @NotBlank(message = "Inventarnummer ist erforderlich")
-    private String inventoryNumber;
+    private String invNumber;
 
-    @NotBlank(message = "Name ist erforderlich")
-    private String name;
+    private String owner;
 
-    private String description;
+    @NotNull(message = "Product ist erforderlich")
+    private Long productId;
 
-    @NotNull(message = "Kategorie ist erforderlich")
-    private Long categoryId;
-
-    private String location;
-    private String imageUrl;
-    private String accessories;
-
-    // Constructors
-    public ItemCreateDTO() {}
-
-    public ItemCreateDTO(String inventoryNumber, String name, String description,
-                         Long categoryId, String location, String imageUrl,
-                         String accessories) {
-        this.inventoryNumber = inventoryNumber;
-        this.name = name;
-        this.description = description;
-        this.categoryId = categoryId;
-        this.location = location;
-        this.imageUrl = imageUrl;
-        this.accessories = accessories;
+    public ItemCreateDTO() {
     }
 
-    // Getters
-    public String getInventoryNumber() {
-        return inventoryNumber;
+    public String getInvNumber() {
+        return invNumber;
     }
 
-    public String getName() {
-        return name;
+    public void setInvNumber(String invNumber) {
+        this.invNumber = invNumber;
     }
 
-    public String getDescription() {
-        return description;
+    public String getOwner() {
+        return owner;
     }
 
-    public Long getCategoryId() {
-        return categoryId;
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
-    public String getLocation() {
-        return location;
+    public Long getProductId() {
+        return productId;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public String getAccessories() {
-        return accessories;
-    }
-
-    // Setters
-    public void setInventoryNumber(String inventoryNumber) {
-        this.inventoryNumber = inventoryNumber;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public void setAccessories(String accessories) {
-        this.accessories = accessories;
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 }

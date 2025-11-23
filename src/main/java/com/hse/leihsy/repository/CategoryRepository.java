@@ -11,10 +11,8 @@ import java.util.Optional;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-    // Alle nicht gelöschten Kategorien
     @Query("SELECT c FROM Category c WHERE c.deletedAt IS NULL")
     List<Category> findAllActive();
 
-    // Kategorie nach Name finden
     Optional<Category> findByNameIgnoreCase(String name);
 }

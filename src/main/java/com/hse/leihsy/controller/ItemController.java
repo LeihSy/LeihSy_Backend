@@ -28,7 +28,7 @@ public class ItemController {
         List<Item> items = itemService.getAllItems();
         List<ItemDTO> dtos = items.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -43,7 +43,7 @@ public class ItemController {
         List<Item> items = itemService.getItemsByProduct(productId);
         List<ItemDTO> dtos = items.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 

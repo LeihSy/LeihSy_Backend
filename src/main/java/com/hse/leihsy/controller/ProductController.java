@@ -28,7 +28,7 @@ public class ProductController {
         List<Product> products = productService.getAllProducts();
         List<ProductDTO> dtos = products.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -43,7 +43,7 @@ public class ProductController {
         List<Product> products = productService.getProductsByCategory(categoryId);
         List<ProductDTO> dtos = products.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -52,7 +52,7 @@ public class ProductController {
         List<Product> products = productService.getProductsByLocation(locationId);
         List<ProductDTO> dtos = products.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -61,7 +61,7 @@ public class ProductController {
         List<Product> products = productService.fullTextSearch(q);
         List<ProductDTO> dtos = products.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 

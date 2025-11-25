@@ -41,7 +41,7 @@ public class BookingController {
         List<Booking> bookings = bookingService.getBookingsByUser(userId);
         List<BookingDTO> dtos = bookings.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -50,7 +50,7 @@ public class BookingController {
         List<Booking> bookings = bookingService.getPendingBookingsForReceiver(receiverId);
         List<BookingDTO> dtos = bookings.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 
@@ -59,7 +59,7 @@ public class BookingController {
         List<Booking> bookings = bookingService.getOverdueBookings();
         List<BookingDTO> dtos = bookings.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 

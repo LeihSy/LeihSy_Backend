@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * Item Entity - Physisches Exemplar eines Products.
  * Beispiel: Meta Quest 3 mit Inventarnummer VR-001
@@ -12,6 +16,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "items")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Item extends BaseEntity {
 
     /**
@@ -50,8 +57,7 @@ public class Item extends BaseEntity {
 
     // Constructors
 
-    public Item() {
-    }
+    //public Item() {    }
 
     public Item(String invNumber, Product product) {
         this.invNumber = invNumber;
@@ -98,47 +104,5 @@ public class Item extends BaseEntity {
                     // Überschneidung: startDate <= bookingEnd AND endDate >= bookingStart
                     return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
                 });
-    }
-
-    // Getters and Setters
-
-    public Long getInsyId() {
-        return insyId;
-    }
-
-    public void setInsyId(Long insyId) {
-        this.insyId = insyId;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public String getInvNumber() {
-        return invNumber;
-    }
-
-    public void setInvNumber(String invNumber) {
-        this.invNumber = invNumber;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public List<Booking> getBookings() {
-        return bookings;
-    }
-
-    public void setBookings(List<Booking> bookings) {
-        this.bookings = bookings;
     }
 }

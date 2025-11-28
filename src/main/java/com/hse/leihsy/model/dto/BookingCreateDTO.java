@@ -3,6 +3,13 @@ package com.hse.leihsy.model.dto;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+@Data // Auto-generates getters, setters, toString, etc.
+@NoArgsConstructor // Generates empty constructor
+@AllArgsConstructor // Generates full constructor
+
 public class BookingCreateDTO {
 
     @NotNull(message = "Product ist erforderlich")
@@ -18,47 +25,4 @@ public class BookingCreateDTO {
     private LocalDateTime proposalPickup;
 
     private String message;
-
-    public BookingCreateDTO() {
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public LocalDateTime getProposalPickup() {
-        return proposalPickup;
-    }
-
-    public void setProposalPickup(LocalDateTime proposalPickup) {
-        this.proposalPickup = proposalPickup;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }

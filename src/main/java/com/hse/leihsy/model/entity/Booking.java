@@ -3,15 +3,21 @@ package com.hse.leihsy.model.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * Booking Entity - Ausleih-Anfrage und Buchung
  * Bildet den kompletten Lebenszyklus einer Ausleihe ab:
  * PENDING -> CONFIRMED -> PICKED_UP -> RETURNED
- *
  * Status wird berechnet aus den Timestamp-Feldern
  */
 @Entity
 @Table(name = "bookings")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Booking extends BaseEntity {
 
     /**
@@ -92,11 +98,7 @@ public class Booking extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
-    // Constructors
-
-    public Booking() {
-    }
-
+    // Constructor
     public Booking(User user, Item item, LocalDateTime startDate, LocalDateTime endDate) {
         this.user = user;
         this.item = item;
@@ -151,103 +153,5 @@ public class Booking extends BaseEntity {
      */
     public void updateStatus() {
         this.status = calculateStatus().name();
-    }
-
-    // Getters and Setters
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public LocalDateTime getProposalPickup() {
-        return proposalPickup;
-    }
-
-    public void setProposalPickup(LocalDateTime proposalPickup) {
-        this.proposalPickup = proposalPickup;
-    }
-
-    public User getProposalBy() {
-        return proposalBy;
-    }
-
-    public void setProposalBy(User proposalBy) {
-        this.proposalBy = proposalBy;
-    }
-
-    public LocalDateTime getConfirmedPickup() {
-        return confirmedPickup;
-    }
-
-    public void setConfirmedPickup(LocalDateTime confirmedPickup) {
-        this.confirmedPickup = confirmedPickup;
-    }
-
-    public LocalDateTime getDistributionDate() {
-        return distributionDate;
-    }
-
-    public void setDistributionDate(LocalDateTime distributionDate) {
-        this.distributionDate = distributionDate;
-    }
-
-    public LocalDateTime getReturnDate() {
-        return returnDate;
-    }
-
-    public void setReturnDate(LocalDateTime returnDate) {
-        this.returnDate = returnDate;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public User getReceiver() {
-        return receiver;
-    }
-
-    public void setReceiver(User receiver) {
-        this.receiver = receiver;
-    }
-
-    public Item getItem() {
-        return item;
-    }
-
-    public void setItem(Item item) {
-        this.item = item;
     }
 }

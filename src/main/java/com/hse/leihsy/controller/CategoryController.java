@@ -4,19 +4,18 @@ import com.hse.leihsy.model.entity.Category;
 import com.hse.leihsy.repository.CategoryRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
+
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class CategoryController {
 
     private final CategoryRepository categoryRepository;
-
-    public CategoryController(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
-    }
 
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {

@@ -4,19 +4,17 @@ import com.hse.leihsy.model.entity.Location;
 import com.hse.leihsy.repository.LocationRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/locations")
 @CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class LocationController {
 
     private final LocationRepository locationRepository;
-
-    public LocationController(LocationRepository locationRepository) {
-        this.locationRepository = locationRepository;
-    }
 
     @GetMapping
     public ResponseEntity<List<Location>> getAllLocations() {

@@ -1,10 +1,12 @@
 package com.hse.leihsy.controller;
 
 import com.hse.leihsy.model.dto.ProductDTO;
+import com.hse.leihsy.mapper.ProductMapper;
 import com.hse.leihsy.model.dto.ProductCreateDTO;
 import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.service.ProductService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,54 +17,41 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductMapper productMapper;
 
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
 
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
         List<Product> products = productService.getAllProducts();
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOs(products));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         Product product = productService.getProductById(id);
-        return ResponseEntity.ok(convertToDTO(product));
+        return ResponseEntity.ok(productMapper.toDTO(product));
     }
 
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<ProductDTO>> getProductsByCategory(@PathVariable Long categoryId) {
         List<Product> products = productService.getProductsByCategory(categoryId);
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOs(products));
     }
 
     @GetMapping("/location/{locationId}")
     public ResponseEntity<List<ProductDTO>> getProductsByLocation(@PathVariable Long locationId) {
         List<Product> products = productService.getProductsByLocation(locationId);
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOs(products));
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String q) {
         List<Product> products = productService.fullTextSearch(q);
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOs(products));
     }
 
     @PostMapping
@@ -81,7 +70,7 @@ public class ProductController {
                 createDTO.getLocationId()
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(productMapper.toDTO(created));
     }
 
     @PutMapping("/{id}")
@@ -104,45 +93,12 @@ public class ProductController {
                 updateDTO.getLocationId()
         );
 
-        return ResponseEntity.ok(convertToDTO(updated));
+        return ResponseEntity.ok(productMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private ProductDTO convertToDTO(Product product) {
-        ProductDTO dto = new ProductDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setDescription(product.getDescription());
-        dto.setExpiryDate(product.getExpiryDate());
-        dto.setPrice(product.getPrice());
-        dto.setImageUrl(product.getImageUrl());
-        dto.setAccessories(product.getAccessories());
-
-        if (product.getCategory() != null) {
-            dto.setCategoryId(product.getCategory().getId());
-            dto.setCategoryName(product.getCategory().getName());
-        }
-
-        if (product.getLocation() != null) {
-            dto.setLocationId(product.getLocation().getId());
-            dto.setLocationRoomNr(product.getLocation().getRoomNr());
-        }
-
-        if (product.getLender() != null) {
-            dto.setLenderId(product.getLender().getId());
-            dto.setLenderName(product.getLender().getName());
-        }
-
-        dto.setAvailableItems(product.getAvailableItemCount());
-        dto.setTotalItems(product.getTotalItemCount());
-        dto.setCreatedAt(product.getCreatedAt());
-        dto.setUpdatedAt(product.getUpdatedAt());
-
-        return dto;
     }
 }

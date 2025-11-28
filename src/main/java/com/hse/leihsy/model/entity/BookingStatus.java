@@ -1,5 +1,9 @@
 package com.hse.leihsy.model.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+@Getter
+@AllArgsConstructor
 /**
  * Booking Status Enum
  *
@@ -51,14 +55,6 @@ public enum BookingStatus {
     CANCELLED("Storniert");
 
     private final String displayName;
-
-    BookingStatus(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
 
     /**
      * Prüft ob Buchung "aktiv" ist (Item ist beim Entleiher)

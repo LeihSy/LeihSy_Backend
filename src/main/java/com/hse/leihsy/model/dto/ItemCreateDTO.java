@@ -3,6 +3,13 @@ package com.hse.leihsy.model.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+@Data // Auto-generates getters, setters, toString, etc.
+@NoArgsConstructor // Generates empty constructor
+@AllArgsConstructor // Generates full constructor
+
 public class ItemCreateDTO {
 
     @NotBlank(message = "Inventarnummer ist erforderlich")
@@ -12,31 +19,4 @@ public class ItemCreateDTO {
 
     @NotNull(message = "Product ist erforderlich")
     private Long productId;
-
-    public ItemCreateDTO() {
-    }
-
-    public String getInvNumber() {
-        return invNumber;
-    }
-
-    public void setInvNumber(String invNumber) {
-        this.invNumber = invNumber;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
 }

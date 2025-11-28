@@ -4,12 +4,19 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * Location Entity - Lagerorte/Räme für Products.
  * Beispiele: "F01.402", "Bibliothek Flandernstrasse"
  */
 @Entity
 @Table(name = "locations")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Location extends BaseEntity {
 
     /**
@@ -26,30 +33,7 @@ public class Location extends BaseEntity {
     @OneToMany(mappedBy = "location", fetch = FetchType.LAZY)
     private List<Product> products = new ArrayList<>();
 
-    // Constructors
-
-    public Location() {
-    }
-
     public Location(String roomNr) {
         this.roomNr = roomNr;
-    }
-
-    // Getters and Setters
-
-    public String getRoomNr() {
-        return roomNr;
-    }
-
-    public void setRoomNr(String roomNr) {
-        this.roomNr = roomNr;
-    }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
     }
 }

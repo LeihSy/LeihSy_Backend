@@ -26,16 +26,27 @@ public class ImageService {
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "webp");
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-    public String saveImage(MultipartFile file) {
+    public String saveImage(MultipartFile file, String productName) {
         validateImage(file);
 
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename);
-        String filename = UUID.randomUUID().toString() + "." + extension;
+
+        // Produktname zu URL-freundlichem Dateinamen konvertieren
+        String sanitizedName = productName
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")  // Nur Buchstaben, Zahlen, Rest wird zu "-"
+                .replaceAll("^-+|-+$", "");      // Führende/Trailing "-" entfernen
+
+        String filename = sanitizedName + "." + extension;
 
         try {
             Path filepath = Paths.get(uploadDir, filename);
             Files.createDirectories(filepath.getParent());
+
+            // Altes Bild mit gleichem Namen löschen falls vorhanden
+            Files.deleteIfExists(filepath);
+
             Files.write(filepath, file.getBytes());
 
             log.info("Image saved successfully: {}", filename);

@@ -12,7 +12,7 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // Alle aktiven Products
-    @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL")
+    @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL ORDER BY p.id ASC")
     List<Product> findAllActive();
 
     // Products nach Kategorie

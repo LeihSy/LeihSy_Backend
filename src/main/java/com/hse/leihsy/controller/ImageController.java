@@ -28,10 +28,16 @@ public class ImageController {
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadImage(
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "productName", required = false) String productName
     ) {
         try {
-            String filename = imageService.saveImage(file);
+            // Fallback: Wenn kein productName, dann Original-Filename verwenden
+            String nameToUse = (productName != null && !productName.isBlank())
+                    ? productName
+                    : file.getOriginalFilename().replaceFirst("[.][^.]+$", ""); // Ohne Extension
+
+            String filename = imageService.saveImage(file, nameToUse);
             String imageUrl = "/api/images/" + filename;
 
             log.info("Image uploaded successfully: {}", filename);

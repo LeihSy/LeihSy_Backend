@@ -70,7 +70,7 @@ public class ProductService {
     public Product createProduct(Product product, Long categoryId, Long locationId, MultipartFile image) {
         // Image Upload handling
         if (image != null && !image.isEmpty()) {
-            String filename = imageService.saveImage(image);
+            String filename = imageService.saveImage(image, product.getName());
             product.setImageUrl("/api/images/" + filename);
         }
 
@@ -104,18 +104,23 @@ public class ProductService {
                 }
             }
 
-            String filename = imageService.saveImage(image);
+            String filename = imageService.saveImage(image, product.getName());
             product.setImageUrl("/api/images/" + filename);
-        } else if (updatedProduct.getImageUrl() != null) {
-            // Falls kein neues Bild, aber imageUrl im updatedProduct gesetzt
-            product.setImageUrl(updatedProduct.getImageUrl());
+        }else if (updatedProduct.getImageUrl() == null && product.getImageUrl() != null) {
+            if (product.getImageUrl().startsWith("/api/images/")) {
+                String oldFilename = product.getImageUrl().replace("/api/images/", "");
+                try {
+                    imageService.deleteImage(oldFilename);
+                } catch (Exception e) {
+                    // Ignorieren
+                }
+            }
+            product.setImageUrl(null);
         }
-
         product.setName(updatedProduct.getName());
         product.setDescription(updatedProduct.getDescription());
         product.setExpiryDate(updatedProduct.getExpiryDate());
         product.setPrice(updatedProduct.getPrice());
-        product.setImageUrl(updatedProduct.getImageUrl());
         product.setAccessories(updatedProduct.getAccessories());
 
         if (categoryId != null) {

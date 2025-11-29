@@ -4,6 +4,10 @@ import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.dto.BookingCreateDTO;
 import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.service.BookingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/bookings")
+@RequestMapping(value = "/api/bookings", produces = "application/json")
 @CrossOrigin(origins = "http://localhost:4200")
 public class BookingController {
 
@@ -25,19 +29,37 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
+
+    @Operation(summary = "Get all bookings", description = "Returns a list of all bookings")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
+    })
     @GetMapping
     public ResponseEntity<List<BookingDTO>> getAllBookings() {
         return ResponseEntity.ok(List.of());
     }
 
+
+    @Operation(summary = "Get booking by ID", description = "Returns a booking with the specified ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Booking found"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<BookingDTO> getBookingById(@PathVariable Long id) {
+    public ResponseEntity<BookingDTO> getBookingById(
+            @Parameter(description = "ID of the booking to retrieve") @PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
         return ResponseEntity.ok(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Get bookings by user", description = "Returns a list of bookings for a specific user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
+    })
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookingDTO>> getBookingsByUser(@PathVariable Long userId) {
+    public ResponseEntity<List<BookingDTO>> getBookingsByUser(
+            @Parameter(description = "ID of the user") @PathVariable Long userId) {
         List<Booking> bookings = bookingService.getBookingsByUser(userId);
         List<BookingDTO> dtos = bookings.stream()
                 .map(this::convertToDTO)
@@ -45,8 +67,14 @@ public class BookingController {
         return ResponseEntity.ok(dtos);
     }
 
+
+    @Operation(summary = "Get pending bookings", description = "Returns a list of pending bookings for a receiver")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pending bookings retrieved successfully")
+    })
     @GetMapping("/pending")
-    public ResponseEntity<List<BookingDTO>> getPendingBookings(@RequestParam Long receiverId) {
+    public ResponseEntity<List<BookingDTO>> getPendingBookings(
+            @Parameter(description = "ID of the receiver") @RequestParam Long receiverId) {
         List<Booking> bookings = bookingService.getPendingBookingsForReceiver(receiverId);
         List<BookingDTO> dtos = bookings.stream()
                 .map(this::convertToDTO)
@@ -54,6 +82,11 @@ public class BookingController {
         return ResponseEntity.ok(dtos);
     }
 
+
+    @Operation(summary = "Get overdue bookings", description = "Returns a list of bookings that are overdue")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Overdue bookings retrieved successfully")
+    })
     @GetMapping("/overdue")
     public ResponseEntity<List<BookingDTO>> getOverdueBookings() {
         List<Booking> bookings = bookingService.getOverdueBookings();
@@ -63,8 +96,15 @@ public class BookingController {
         return ResponseEntity.ok(dtos);
     }
 
+
+    @Operation(summary = "Create a new booking", description = "Creates a new booking with the provided data")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Booking created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data")
+    })
     @PostMapping
-    public ResponseEntity<BookingDTO> createBooking(@Valid @RequestBody BookingCreateDTO createDTO) {
+    public ResponseEntity<BookingDTO> createBooking(
+            @Parameter(description = "Booking data") @Valid @RequestBody BookingCreateDTO createDTO) {
         Booking booking = bookingService.createBooking(
                 1L,
                 createDTO.getProductId(),
@@ -76,26 +116,45 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Confirm a booking", description = "Confirms a booking with the given pickup date")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Booking confirmed successfully"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @PutMapping("/{id}/confirm")
     public ResponseEntity<BookingDTO> confirmBooking(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> payload) {
+            @Parameter(description = "ID of the booking to confirm") @PathVariable Long id,
+            @Parameter(description = "Payload containing confirmed pickup datetime") @RequestBody Map<String, String> payload) {
 
         LocalDateTime confirmedPickup = LocalDateTime.parse(payload.get("confirmedPickup"));
         Booking booking = bookingService.confirmBooking(id, confirmedPickup);
         return ResponseEntity.ok(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Reject a booking", description = "Rejects a booking by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Booking rejected successfully"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @PutMapping("/{id}/reject")
-    public ResponseEntity<BookingDTO> rejectBooking(@PathVariable Long id) {
+    public ResponseEntity<BookingDTO> rejectBooking(
+            @Parameter(description = "ID of the booking to reject") @PathVariable Long id) {
         Booking booking = bookingService.rejectBooking(id);
         return ResponseEntity.ok(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Propose a new pickup date", description = "Proposes a new pickup date for a booking")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Proposal submitted successfully"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @PutMapping("/{id}/propose")
     public ResponseEntity<BookingDTO> proposeNewPickup(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> payload) {
+            @Parameter(description = "ID of the booking to propose a new pickup") @PathVariable Long id,
+            @Parameter(description = "Payload containing proposer ID and new proposed pickup date") @RequestBody Map<String, String> payload) {
 
         Long proposerId = Long.parseLong(payload.get("proposerId"));
         LocalDateTime newProposal = LocalDateTime.parse(payload.get("newProposal"));
@@ -103,20 +162,41 @@ public class BookingController {
         return ResponseEntity.ok(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Record pickup", description = "Records the pickup of an item for a booking")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pickup recorded successfully"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @PutMapping("/{id}/pickup")
-    public ResponseEntity<BookingDTO> recordPickup(@PathVariable Long id) {
+    public ResponseEntity<BookingDTO> recordPickup(
+            @Parameter(description = "ID of the booking to record pickup") @PathVariable Long id) {
         Booking booking = bookingService.recordPickup(id);
         return ResponseEntity.ok(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Record return", description = "Records the return of an item for a booking")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Return recorded successfully"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @PutMapping("/{id}/return")
-    public ResponseEntity<BookingDTO> recordReturn(@PathVariable Long id) {
+    public ResponseEntity<BookingDTO> recordReturn(
+            @Parameter(description = "ID of the booking to record return") @PathVariable Long id) {
         Booking booking = bookingService.recordReturn(id);
         return ResponseEntity.ok(convertToDTO(booking));
     }
 
+
+    @Operation(summary = "Cancel a booking", description = "Cancels a booking by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Booking cancelled successfully"),
+            @ApiResponse(responseCode = "404", description = "Booking not found")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelBooking(@PathVariable Long id) {
+    public ResponseEntity<Void> cancelBooking(
+            @Parameter(description = "ID of the booking to cancel") @PathVariable Long id) {
         bookingService.cancelBooking(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Create Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 2px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .preview {
+            margin-top: 20px;
+        }
+        .preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>LeihSy - Product erstellen (mit Bild)</h1>
+
+    <form id="productForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required placeholder="z.B. Meta Quest 3">
+
+        <label for="description">Beschreibung:</label>
+        <textarea id="description" required placeholder="Detaillierte Produktbeschreibung..."></textarea>
+
+        <label for="expiryDate">Max. Ausleihdauer (Tage):</label>
+        <input type="number" id="expiryDate" required value="14" min="1">
+
+        <label for="price">Preis pro Tag (EUR):</label>
+        <input type="number" id="price" step="0.01" required value="5.00" min="0">
+
+        <label for="accessories">Zubehoer (JSON):</label>
+        <input type="text" id="accessories" placeholder='["Controller", "Ladekabel"]'>
+
+        <label for="categoryId">Kategorie ID:</label>
+        <input type="number" id="categoryId" value="1" required min="1">
+
+        <label for="locationId">Standort ID:</label>
+        <input type="number" id="locationId" value="1" required min="1">
+
+        <label for="image">Produktbild (optional):</label>
+        <input type="file" id="image" accept="image/jpeg,image/png,image/webp">
+
+        <button type="submit">Product erstellen</button>
+    </form>
+
+    <div id="result"></div>
+    <div id="preview" class="preview"></div>
+</div>
+
+<script>
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const accessories = document.getElementById('accessories').value;
+        let accessoriesArray = null;
+
+        if (accessories && accessories.trim() !== '') {
+            try {
+                accessoriesArray = JSON.parse(accessories);
+            } catch (e) {
+                showResult('Fehler: Zubehoer muss valides JSON sein, z.B. ["Item1", "Item2"]', false);
+                return;
+            }
+        }
+
+        const productData = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            expiryDate: parseInt(document.getElementById('expiryDate').value),
+            price: parseFloat(document.getElementById('price').value),
+            accessories: accessoriesArray,
+            categoryId: parseInt(document.getElementById('categoryId').value),
+            locationId: parseInt(document.getElementById('locationId').value)
+        };
+
+        const formData = new FormData();
+
+        formData.append('product', new Blob([JSON.stringify(productData)], {
+            type: 'application/json'
+        }));
+
+        const imageFile = document.getElementById('image').files[0];
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        try {
+            showResult('Uploading...', true);
+
+            const response = await fetch('http://localhost:8080/api/products', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                showResult('Fehler: ' + response.status + ' - ' + errorText, false);
+                return;
+            }
+
+            const data = await response.json();
+
+            showResult(
+                '<strong>Product erfolgreich erstellt!</strong><br>' +
+                'ID: ' + data.id + '<br>' +
+                'Name: ' + data.name + '<br>' +
+                'Preis: ' + data.price + ' EUR/Tag<br>' +
+                'Max. Ausleihdauer: ' + data.expiryDate + ' Tage<br>' +
+                (data.imageUrl ? 'Bild-URL: <code>' + data.imageUrl + '</code><br>' : 'Kein Bild hochgeladen<br>') +
+                'Kategorie: ' + data.categoryName + '<br>' +
+                'Standort: ' + data.locationRoomNr,
+                true
+            );
+
+            if (data.imageUrl) {
+                document.getElementById('preview').innerHTML =
+                    '<h3>Bild-Preview:</h3>' +
+                    '<img src="http://localhost:8080' + data.imageUrl + '" alt="Product Image">';
+            } else {
+                document.getElementById('preview').innerHTML = '';
+            }
+
+            document.getElementById('productForm').reset();
+
+        } catch (error) {
+            showResult('Netzwerkfehler: ' + error.message, false);
+            console.error('Error:', error);
+        }
+    });
+
+    function showResult(message, success) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML =
+            '<div class="result ' + (success ? 'success' : 'error') + '">' +
+            message +
+            '</div>';
+    }
+</script>
+</body>
+</html>

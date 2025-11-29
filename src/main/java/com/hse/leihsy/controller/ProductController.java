@@ -4,13 +4,15 @@ import com.hse.leihsy.model.dto.ProductDTO;
 import com.hse.leihsy.model.dto.ProductCreateDTO;
 import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.service.ProductService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -18,9 +20,11 @@ import java.util.stream.Collectors;
 public class ProductController {
 
     private final ProductService productService;
+    private final ObjectMapper objectMapper;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, ObjectMapper objectMapper) {
         this.productService = productService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -65,46 +69,62 @@ public class ProductController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductCreateDTO createDTO) {
-        Product product = new Product();
-        product.setName(createDTO.getName());
-        product.setDescription(createDTO.getDescription());
-        product.setExpiryDate(createDTO.getExpiryDate());
-        product.setPrice(createDTO.getPrice());
-        product.setImageUrl(createDTO.getImageUrl());
-        product.setAccessories(createDTO.getAccessories());
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductDTO> createProduct(
+            @RequestPart("product") String productJson,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        Product created = productService.createProduct(
-                product,
-                createDTO.getCategoryId(),
-                createDTO.getLocationId()
-        );
+        try {
+            ProductCreateDTO createDTO = objectMapper.readValue(productJson, ProductCreateDTO.class);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(created));
+            Product product = new Product();
+            product.setName(createDTO.getName());
+            product.setDescription(createDTO.getDescription());
+            product.setExpiryDate(createDTO.getExpiryDate());
+            product.setPrice(createDTO.getPrice());
+            product.setAccessories(createDTO.getAccessories());
+
+            Product created = productService.createProduct(
+                    product,
+                    createDTO.getCategoryId(),
+                    createDTO.getLocationId(),
+                    image
+            );
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(created));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create product", e);
+        }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestBody ProductCreateDTO updateDTO) {
+            @RequestPart("product") String productJson,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        Product product = new Product();
-        product.setName(updateDTO.getName());
-        product.setDescription(updateDTO.getDescription());
-        product.setExpiryDate(updateDTO.getExpiryDate());
-        product.setPrice(updateDTO.getPrice());
-        product.setImageUrl(updateDTO.getImageUrl());
-        product.setAccessories(updateDTO.getAccessories());
+        try {
+            ProductCreateDTO updateDTO = objectMapper.readValue(productJson, ProductCreateDTO.class);
 
-        Product updated = productService.updateProduct(
-                id,
-                product,
-                updateDTO.getCategoryId(),
-                updateDTO.getLocationId()
-        );
+            Product product = new Product();
+            product.setName(updateDTO.getName());
+            product.setDescription(updateDTO.getDescription());
+            product.setExpiryDate(updateDTO.getExpiryDate());
+            product.setPrice(updateDTO.getPrice());
+            product.setAccessories(updateDTO.getAccessories());
 
-        return ResponseEntity.ok(convertToDTO(updated));
+            Product updated = productService.updateProduct(
+                    id,
+                    product,
+                    updateDTO.getCategoryId(),
+                    updateDTO.getLocationId(),
+                    image
+            );
+
+            return ResponseEntity.ok(convertToDTO(updated));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update product", e);
+        }
     }
 
     @DeleteMapping("/{id}")

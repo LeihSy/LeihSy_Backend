@@ -83,7 +83,7 @@ public class Booking extends BaseEntity {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id_receiver")
-    private User receiver;
+    private User lender;
 
     /**
      * Das ausgeliehene Item (physisches Exemplar)
@@ -106,7 +106,7 @@ public class Booking extends BaseEntity {
 
         // Verleiher automatisch aus Product setzen
         if (item != null && item.getProduct() != null && item.getProduct().getLender() != null) {
-            this.receiver = item.getProduct().getLender();
+            this.lender = item.getProduct().getLender();
         }
     }
 

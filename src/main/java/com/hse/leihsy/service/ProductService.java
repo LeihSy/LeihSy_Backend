@@ -8,6 +8,7 @@ import com.hse.leihsy.repository.CategoryRepository;
 import com.hse.leihsy.repository.LocationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,13 +19,15 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
+    private final ImageService imageService;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          LocationRepository locationRepository) {
+                          LocationRepository locationRepository, ImageService imageService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.locationRepository = locationRepository;
+        this.imageService = imageService;
     }
 
     // Alle aktiven Products abrufen
@@ -64,7 +67,13 @@ public class ProductService {
     }
 
     // Neues Product erstellen
-    public Product createProduct(Product product, Long categoryId, Long locationId) {
+    public Product createProduct(Product product, Long categoryId, Long locationId, MultipartFile image) {
+        // Image Upload handling
+        if (image != null && !image.isEmpty()) {
+            String filename = imageService.saveImage(image, product.getName());
+            product.setImageUrl("/api/images/" + filename);
+        }
+
         if (categoryId != null) {
             Category category = categoryRepository.findById(categoryId)
                     .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + categoryId));
@@ -81,14 +90,37 @@ public class ProductService {
     }
 
     // Product aktualisieren
-    public Product updateProduct(Long id, Product updatedProduct, Long categoryId, Long locationId) {
+    public Product updateProduct(Long id, Product updatedProduct, Long categoryId, Long locationId, MultipartFile image) {
         Product product = getProductById(id);
 
+        // Image Upload handling - altes Bild löschen falls neues kommt
+        if (image != null && !image.isEmpty()) {
+            if (product.getImageUrl() != null && product.getImageUrl().startsWith("/api/images/")) {
+                String oldFilename = product.getImageUrl().replace("/api/images/", "");
+                try {
+                    imageService.deleteImage(oldFilename);
+                } catch (Exception e) {
+                    // Ignorieren falls altes Bild nicht existiert
+                }
+            }
+
+            String filename = imageService.saveImage(image, product.getName());
+            product.setImageUrl("/api/images/" + filename);
+        }else if (updatedProduct.getImageUrl() == null && product.getImageUrl() != null) {
+            if (product.getImageUrl().startsWith("/api/images/")) {
+                String oldFilename = product.getImageUrl().replace("/api/images/", "");
+                try {
+                    imageService.deleteImage(oldFilename);
+                } catch (Exception e) {
+                    // Ignorieren
+                }
+            }
+            product.setImageUrl(null);
+        }
         product.setName(updatedProduct.getName());
         product.setDescription(updatedProduct.getDescription());
         product.setExpiryDate(updatedProduct.getExpiryDate());
         product.setPrice(updatedProduct.getPrice());
-        product.setImageUrl(updatedProduct.getImageUrl());
         product.setAccessories(updatedProduct.getAccessories());
 
         if (categoryId != null) {
@@ -109,6 +141,17 @@ public class ProductService {
     // Product löschen (Soft-Delete)
     public void deleteProduct(Long id) {
         Product product = getProductById(id);
+
+        // Bild löschen falls vorhanden
+        if (product.getImageUrl() != null && product.getImageUrl().startsWith("/api/images/")) {
+            String filename = product.getImageUrl().replace("/api/images/", "");
+            try {
+                imageService.deleteImage(filename);
+            } catch (Exception e) {
+                // Ignorieren falls Bild nicht existiert
+            }
+        }
+
         product.softDelete();
         productRepository.save(product);
     }

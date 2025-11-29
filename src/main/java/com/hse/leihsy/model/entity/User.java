@@ -43,13 +43,13 @@ public class User extends BaseEntity {
      * Ausleihen als Verleiher
      */
     @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY)
-    private List<Booking> bookingsAsReceiver = new ArrayList<>();
+    private List<Booking> bookingsAsLender = new ArrayList<>();
 
     /**
-     * Products die dieser User verleiht
+     * Items die dieser User verleiht
      */
     @OneToMany(mappedBy = "lender", fetch = FetchType.LAZY)
-    private List<Product> lendingProducts = new ArrayList<>();
+    private List<Item> lendingItems = new ArrayList<>();
 
     // Constructors
 
@@ -96,12 +96,12 @@ public class User extends BaseEntity {
         this.bookingsAsUser = bookingsAsUser;
     }
 
-    public List<Booking> getBookingsAsReceiver() {
-        return bookingsAsReceiver;
+    public List<Booking> getbookingsAsLender() {
+        return bookingsAsLender;
     }
 
-    public void setBookingsAsReceiver(List<Booking> bookingsAsReceiver) {
-        this.bookingsAsReceiver = bookingsAsReceiver;
+    public void setbookingsAsLender(List<Booking> bookingsAsLender) {
+        this.bookingsAsLender = bookingsAsLender;
     }
 
     public List<Product> getLendingProducts() {

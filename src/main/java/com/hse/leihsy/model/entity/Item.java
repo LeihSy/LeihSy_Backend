@@ -48,6 +48,14 @@ public class Item extends BaseEntity {
     @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     private List<Booking> bookings = new ArrayList<>();
 
+
+    /**
+     * Verleiher - Person die Ausgabe/Rücknahme macht
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lender_id")
+    private User lender;
+
     // Constructors
 
     public Item() {
@@ -61,6 +69,13 @@ public class Item extends BaseEntity {
     public Item(String invNumber, String owner, Product product) {
         this.invNumber = invNumber;
         this.owner = owner;
+        this.product = product;
+    }
+
+    public Item(String invNumber, String owner, User lender, Product product) {
+        this.invNumber = invNumber;
+        this.owner = owner;
+        this.lender = lender;
         this.product = product;
     }
 
@@ -140,5 +155,13 @@ public class Item extends BaseEntity {
 
     public void setBookings(List<Booking> bookings) {
         this.bookings = bookings;
+    }
+
+    public User getLender() {
+        return lender;
+    }
+
+    public void setLender(User lender) {
+        this.lender = lender;
     }
 }

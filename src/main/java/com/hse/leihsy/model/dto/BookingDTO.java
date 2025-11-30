@@ -7,8 +7,8 @@ public class BookingDTO {
     private Long id;
     private Long userId;
     private String userName;
-    private Long receiverId;
-    private String receiverName;
+    private Long lenderId;
+    private String lenderName;
     private Long itemId;
     private String itemInvNumber;
     private Long productId;
@@ -17,7 +17,7 @@ public class BookingDTO {
     private String status;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private LocalDateTime proposalPickup;
+    private String proposedPickups;
     private Long proposalById;
     private String proposalByName;
     private LocalDateTime confirmedPickup;
@@ -53,20 +53,20 @@ public class BookingDTO {
         this.userName = userName;
     }
 
-    public Long getReceiverId() {
-        return receiverId;
+    public Long getLenderId() {
+        return lenderId;
     }
 
-    public void setReceiverId(Long receiverId) {
-        this.receiverId = receiverId;
+    public void setLenderId(Long lenderId) {
+        this.lenderId = lenderId;
     }
 
-    public String getReceiverName() {
-        return receiverName;
+    public String getLenderName() {
+        return lenderName;
     }
 
-    public void setReceiverName(String receiverName) {
-        this.receiverName = receiverName;
+    public void setLenderName(String lenderName) {
+        this.lenderName = lenderName;
     }
 
     public Long getItemId() {
@@ -133,12 +133,12 @@ public class BookingDTO {
         this.endDate = endDate;
     }
 
-    public LocalDateTime getProposalPickup() {
-        return proposalPickup;
+    public String getProposedPickups() {
+        return proposedPickups;
     }
 
-    public void setProposalPickup(LocalDateTime proposalPickup) {
-        this.proposalPickup = proposalPickup;
+    public void setProposedPickups(String proposedPickups) {
+        this.proposedPickups = proposedPickups;
     }
 
     public Long getProposalById() {

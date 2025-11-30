@@ -17,37 +17,57 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(@Param("userId") Long userId);
 
     // Buchungen für einen Verleiher
-    @Query("SELECT b FROM Booking b WHERE b.receiver.id = :receiverId AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
-    List<Booking> findByReceiverId(@Param("receiverId") Long receiverId);
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
+    List<Booking> findByLenderId(@Param("lenderId") Long lenderId);
 
-    // Buchungen nach Status
-    @Query("SELECT b FROM Booking b WHERE b.status = :status AND b.deletedAt IS NULL")
-    List<Booking> findByStatus(@Param("status") String status);
+    // Offene Anfragen für einen Verleiher (PENDING = noch keine proposed_pickups)
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId " +
+            "AND b.proposedPickups IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findPendingByLenderId(@Param("lenderId") Long lenderId);
 
-    // Offene Anfragen fuer einen Verleiher (PENDING)
-    @Query("SELECT b FROM Booking b WHERE b.receiver.id = :receiverId AND b.status = 'PENDING' AND b.deletedAt IS NULL")
-    List<Booking> findPendingByReceiverId(@Param("receiverId") Long receiverId);
-
-    // Aktive Buchungen eines Items (für Verfuegbarkeitspruefung)
-    @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId AND b.returnDate IS NULL AND b.deletedAt IS NULL")
+    // Aktive Buchungen eines Items (für Verfügbarkeitsprüfung)
+    @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL")
     List<Booking> findActiveByItemId(@Param("itemId") Long itemId);
 
     // Buchungen die einen Zeitraum überlappen
     @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId " +
             "AND b.startDate <= :endDate AND b.endDate >= :startDate " +
-            "AND b.returnDate IS NULL AND b.deletedAt IS NULL")
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL")
     List<Booking> findOverlappingBookings(
             @Param("itemId") Long itemId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    // Buchungen die bald ablaufen (Erinnerung)
+    // Buchungen die bald ablaufen (Erinnerung) - für Email-Reminder
     @Query("SELECT b FROM Booking b WHERE b.endDate BETWEEN :now AND :reminderDate " +
-            "AND b.returnDate IS NULL AND b.status = 'PICKED_UP' AND b.deletedAt IS NULL")
-    List<Booking> findDueSoon(@Param("now") LocalDateTime now, @Param("reminderDate") LocalDateTime reminderDate);
+            "AND b.returnDate IS NULL " +
+            "AND b.distributionDate IS NOT NULL " +
+            "AND b.deletedAt IS NULL")
+    List<Booking> findDueSoon(
+            @Param("now") LocalDateTime now,
+            @Param("reminderDate") LocalDateTime reminderDate);
 
     // Überfällige Buchungen
-    @Query("SELECT b FROM Booking b WHERE b.endDate < :now AND b.returnDate IS NULL " +
-            "AND b.status = 'PICKED_UP' AND b.deletedAt IS NULL")
+    @Query("SELECT b FROM Booking b WHERE b.endDate < :now " +
+            "AND b.returnDate IS NULL " +
+            "AND b.distributionDate IS NOT NULL " +
+            "AND b.deletedAt IS NULL")
     List<Booking> findOverdue(@Param("now") LocalDateTime now);
+
+    // Buchungen die länger als 24h PENDING sind (für Auto-Cancel Cronjob)
+    @Query("SELECT b FROM Booking b WHERE b.createdAt < :threshold " +
+            "AND b.proposedPickups IS NULL " +
+            "AND b.deletedAt IS NULL")
+    List<Booking> findPendingOlderThan(@Param("threshold") LocalDateTime threshold);
+
+    // Buchungen die länger als 24h CONFIRMED sind ohne Abholung (für Auto-Expire Cronjob)
+    @Query("SELECT b FROM Booking b WHERE b.confirmedPickup < :threshold " +
+            "AND b.distributionDate IS NULL " +
+            "AND b.deletedAt IS NULL")
+    List<Booking> findConfirmedNotPickedUpOlderThan(@Param("threshold") LocalDateTime threshold);
 }

@@ -77,7 +77,6 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "location_id")
     private Location location;
 
-
     /**
      * Physische Exemplare dieses Produkts
      */

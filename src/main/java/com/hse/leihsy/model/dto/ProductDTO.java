@@ -16,8 +16,6 @@ public class ProductDTO {
     private String categoryName;
     private Long locationId;
     private String locationRoomNr;
-    private Long lenderId;
-    private String lenderName;
     private Long availableItems;
     private Long totalItems;
     private LocalDateTime createdAt;
@@ -112,22 +110,6 @@ public class ProductDTO {
 
     public void setLocationRoomNr(String locationRoomNr) {
         this.locationRoomNr = locationRoomNr;
-    }
-
-    public Long getLenderId() {
-        return lenderId;
-    }
-
-    public void setLenderId(Long lenderId) {
-        this.lenderId = lenderId;
-    }
-
-    public String getLenderName() {
-        return lenderName;
-    }
-
-    public void setLenderName(String lenderName) {
-        this.lenderName = lenderName;
     }
 
     public Long getAvailableItems() {

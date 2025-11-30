@@ -27,7 +27,7 @@ public class Booking extends BaseEntity {
     private String status;
 
     /**
-     * Gewüschter Ausleihbeginn
+     * Gewünschter Ausleihbeginn
      */
     @Column(name = "start_date")
     private LocalDateTime startDate;
@@ -39,10 +39,11 @@ public class Booking extends BaseEntity {
     private LocalDateTime endDate;
 
     /**
-     * Aktueller Abholtermin-Vorschlag
+     * Terminvorschläge als JSON-Array
+     * Format: ["2025-12-01T10:00:00", "2025-12-01T14:00:00", "2025-12-02T09:00:00"]
      */
-    @Column(name = "proposal_pickup")
-    private LocalDateTime proposalPickup;
+    @Column(name = "proposed_pickups", columnDefinition = "TEXT")
+    private String proposedPickups;
 
     /**
      * Wer hat zuletzt einen Termin vorgeschlagen (User-ID)
@@ -79,10 +80,10 @@ public class Booking extends BaseEntity {
     private User user;
 
     /**
-     * Verleiher (empfängt die Anfrage, wird aus Item.product.lender ermittelt)
+     * Verleiher (wird aus Item.lender ermittelt)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id_receiver")
+    @JoinColumn(name = "lender_id")
     private User lender;
 
     /**
@@ -104,9 +105,9 @@ public class Booking extends BaseEntity {
         this.endDate = endDate;
         this.status = BookingStatus.PENDING.name();
 
-        // Verleiher automatisch aus Product setzen
-        if (item != null && item.getProduct() != null && item.getProduct().getLender() != null) {
-            this.lender = item.getProduct().getLender();
+        // Verleiher automatisch aus Item setzen
+        if (item != null && item.getLender() != null) {
+            this.lender = item.getLender();
         }
     }
 
@@ -187,12 +188,12 @@ public class Booking extends BaseEntity {
         this.endDate = endDate;
     }
 
-    public LocalDateTime getProposalPickup() {
-        return proposalPickup;
+    public String getProposedPickups() {
+        return proposedPickups;
     }
 
-    public void setProposalPickup(LocalDateTime proposalPickup) {
-        this.proposalPickup = proposalPickup;
+    public void setProposedPickups(String proposedPickups) {
+        this.proposedPickups = proposedPickups;
     }
 
     public User getProposalBy() {
@@ -235,12 +236,12 @@ public class Booking extends BaseEntity {
         this.user = user;
     }
 
-    public User getReceiver() {
-        return receiver;
+    public User getLender() {
+        return lender;
     }
 
-    public void setReceiver(User receiver) {
-        this.receiver = receiver;
+    public void setLender(User lender) {
+        this.lender = lender;
     }
 
     public Item getItem() {

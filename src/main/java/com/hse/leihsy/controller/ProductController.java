@@ -1,37 +1,36 @@
 package com.hse.leihsy.controller;
 
-import com.hse.leihsy.model.dto.ProductDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hse.leihsy.mapper.ProductMapper;
 import com.hse.leihsy.model.dto.ProductCreateDTO;
+import com.hse.leihsy.model.dto.ProductDTO;
 import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
-@RequestMapping(value ="/api/products", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
+@RequestMapping(value = "/api/products", produces = "application/json")
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
 
-    public ProductController(ProductService productService, ObjectMapper objectMapper) {
+    public ProductController(ProductService productService, ProductMapper productMapper, ObjectMapper objectMapper) {
         this.productService = productService;
+        this.productMapper = productMapper;
         this.objectMapper = objectMapper;
     }
-
 
     @Operation(summary = "Get all products", description = "Returns a list of all products")
     @ApiResponses({
@@ -40,12 +39,8 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
         List<Product> products = productService.getAllProducts();
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOList(products));
     }
-
 
     @Operation(summary = "Get product by ID", description = "Returns a product with matching ID")
     @ApiResponses({
@@ -56,39 +51,30 @@ public class ProductController {
     public ResponseEntity<ProductDTO> getProductById(
             @Parameter(description = "ID of the product to retrieve") @PathVariable Long id) {
         Product product = productService.getProductById(id);
-        return ResponseEntity.ok(convertToDTO(product));
+        return ResponseEntity.ok(productMapper.toDTO(product));
     }
-
 
     @Operation(summary = "Get products by category", description = "Returns a list of products filtered by category")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "List of products retrieved successfully")
     })
-    @GetMapping("/category/{categoryId}")
+    @GetMapping("/categories/{categoryId}")
     public ResponseEntity<List<ProductDTO>> getProductsByCategory(
             @Parameter(description = "ID of the category") @PathVariable Long categoryId) {
         List<Product> products = productService.getProductsByCategory(categoryId);
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOList(products));
     }
-
 
     @Operation(summary = "Get products by location", description = "Returns a list of products filtered by location")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "List of products retrieved successfully")
     })
-    @GetMapping("/location/{locationId}")
+    @GetMapping("/locations/{locationId}")
     public ResponseEntity<List<ProductDTO>> getProductsByLocation(
             @Parameter(description = "ID of the location") @PathVariable Long locationId) {
         List<Product> products = productService.getProductsByLocation(locationId);
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOList(products));
     }
-
 
     @Operation(summary = "Search products", description = "Search for products using a query string")
     @ApiResponses({
@@ -98,10 +84,7 @@ public class ProductController {
     public ResponseEntity<List<ProductDTO>> searchProducts(
             @Parameter(description = "Query string for full-text search") @RequestParam String q) {
         List<Product> products = productService.fullTextSearch(q);
-        List<ProductDTO> dtos = products.stream()
-                .map(this::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(productMapper.toDTOList(products));
     }
 
     @Operation(summary = "Create a new product", description = "Creates a new product with the given data")
@@ -131,7 +114,7 @@ public class ProductController {
                     image
             );
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(created));
+            return ResponseEntity.status(HttpStatus.CREATED).body(productMapper.toDTO(created));
         } catch (Exception e) {
             throw new RuntimeException("Failed to create product", e);
         }
@@ -166,12 +149,11 @@ public class ProductController {
                     image
             );
 
-            return ResponseEntity.ok(convertToDTO(updated));
+            return ResponseEntity.ok(productMapper.toDTO(updated));
         } catch (Exception e) {
             throw new RuntimeException("Failed to update product", e);
         }
     }
-
 
     @Operation(summary = "Delete a product", description = "Deletes a product by ID")
     @ApiResponses({
@@ -183,38 +165,5 @@ public class ProductController {
             @Parameter(description = "ID of the product to delete") @PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private ProductDTO convertToDTO(Product product) {
-        ProductDTO dto = new ProductDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setDescription(product.getDescription());
-        dto.setExpiryDate(product.getExpiryDate());
-        dto.setPrice(product.getPrice());
-        dto.setImageUrl(product.getImageUrl());
-        dto.setAccessories(product.getAccessories());
-
-        if (product.getCategory() != null) {
-            dto.setCategoryId(product.getCategory().getId());
-            dto.setCategoryName(product.getCategory().getName());
-        }
-
-        if (product.getLocation() != null) {
-            dto.setLocationId(product.getLocation().getId());
-            dto.setLocationRoomNr(product.getLocation().getRoomNr());
-        }
-
-        if (product.getLender() != null) {
-            dto.setLenderId(product.getLender().getId());
-            dto.setLenderName(product.getLender().getName());
-        }
-
-        dto.setAvailableItems(product.getAvailableItemCount());
-        dto.setTotalItems(product.getTotalItemCount());
-        dto.setCreatedAt(product.getCreatedAt());
-        dto.setUpdatedAt(product.getUpdatedAt());
-
-        return dto;
     }
 }

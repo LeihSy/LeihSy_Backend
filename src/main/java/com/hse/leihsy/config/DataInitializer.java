@@ -90,7 +90,7 @@ public class DataInitializer {
                     "Die Meta Quest 3 ist ein Mixed-Reality-Headset mit hochauflösendem Display und verbessertem Tracking.");
             metaQuest3.setCategory(catVR);
             metaQuest3.setLocation(locVRLab);
-            metaQuest3.setLender(verleiherChristian);
+            //metaQuest3.setLender(verleiherChristian);
             metaQuest3.setExpiryDate(14);
             metaQuest3.setPrice(new BigDecimal("5.00"));
             metaQuest3.setAccessories("[\"2x Controller\", \"Ladekabel USB-C\", \"Tragetasche\"]");
@@ -100,7 +100,7 @@ public class DataInitializer {
                     "Professionelles VR-Headset mit 5K-Auflösung und präzisom Tracking.");
             htcVive.setCategory(catVR);
             htcVive.setLocation(locVRLab);
-            htcVive.setLender(verleiherChristian);
+            //htcVive.setLender(verleiherChristian);
             htcVive.setExpiryDate(7);
             htcVive.setPrice(new BigDecimal("10.00"));
             htcVive.setAccessories("[\"2x Controller\", \"2x Basisstationen\", \"Linkbox\"]");
@@ -110,7 +110,7 @@ public class DataInitializer {
                     "Spiegellose Vollformatkamera mit 33 Megapixel und 4K Video.");
             sonyA7.setCategory(catPhoto);
             sonyA7.setLocation(locKEIM);
-            sonyA7.setLender(verleiherChristian);
+            //sonyA7.setLender(verleiherChristian);
             sonyA7.setExpiryDate(7);
             sonyA7.setPrice(new BigDecimal("15.00"));
             sonyA7.setAccessories("[\"Objektiv 28-70mm\", \"Akku\", \"Ladegerät\", \"Tragegurt\"]");
@@ -119,7 +119,7 @@ public class DataInitializer {
                     "Professionelle Vollformatkamera mit 45 MP und 8K Video.");
             canonEOS.setCategory(catPhoto);
             canonEOS.setLocation(locBib);
-            canonEOS.setLender(verleiherAndreas);
+            //canonEOS.setLender(verleiherAndreas);
             canonEOS.setExpiryDate(7);
             canonEOS.setPrice(new BigDecimal("20.00"));
 
@@ -128,7 +128,7 @@ public class DataInitializer {
                     "Studiomikrofon mit niedriegem Eigenrauschen, ideal fuer Podcasts.");
             rodeNT1.setCategory(catAudio);
             rodeNT1.setLocation(locKEIM);
-            rodeNT1.setLender(verleiherAndreas);
+            //rodeNT1.setLender(verleiherAndreas);
             rodeNT1.setExpiryDate(14);
             rodeNT1.setPrice(new BigDecimal("3.00"));
             rodeNT1.setAccessories("[\"Spinne\", \"Popschutz\", \"XLR-Kabel\"]");
@@ -138,7 +138,7 @@ public class DataInitializer {
                     "Apple MacBook Pro mit M3 Chip, 18GB RAM, 512GB SSD.");
             macbookPro.setCategory(catIT);
             macbookPro.setLocation(locKEIM);
-            macbookPro.setLender(verleiherAndreas);
+            //macbookPro.setLender(verleiherAndreas);
             macbookPro.setExpiryDate(7);
             macbookPro.setPrice(new BigDecimal("25.00"));
             macbookPro.setAccessories("[\"Ladegerät\", \"USB-C Hub\"]");

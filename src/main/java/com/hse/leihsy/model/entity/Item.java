@@ -21,8 +21,7 @@ public class Item extends BaseEntity {
     private Long insyId;
 
     /**
-     * Besitzer des Gegenstands
-     * NICHT der Verleiher - der wird über Product.lender ermittelt
+     * Besitzer des Gegenstands (z.B. Christian Haas)
      */
     @Column(name = "owner", length = 255)
     private String owner;
@@ -33,7 +32,7 @@ public class Item extends BaseEntity {
     @Column(name = "invnumber", length = 255, unique = true)
     private String invNumber;
 
-    // =========================================    // Relationships
+    // Relationships
 
     /**
      * Produkt-Modell zu dem dieses Item gehört
@@ -41,6 +40,13 @@ public class Item extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    /**
+     * Verleiher - Person die Ausgabe/Rücknahme macht
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lender_id")
+    private User lender;
 
     /**
      * Buchungen für dieses Item
@@ -64,6 +70,13 @@ public class Item extends BaseEntity {
         this.product = product;
     }
 
+    public Item(String invNumber, String owner, User lender, Product product) {
+        this.invNumber = invNumber;
+        this.owner = owner;
+        this.lender = lender;
+        this.product = product;
+    }
+
     // Helper Methods
 
     /**
@@ -75,19 +88,18 @@ public class Item extends BaseEntity {
                 .filter(b -> b.getDeletedAt() == null)
                 .noneMatch(b -> {
                     boolean hasReturnDate = b.getReturnDate() != null;
-                    return !hasReturnDate; // Nicht zurückgegeben = nicht verfügbar
+                    return !hasReturnDate;
                 });
     }
 
     /**
-     * Prüft Verfügbarkeit fuer einen bestimmten Zeitraum
+     * Prüft Verfügbarkeit für einen bestimmten Zeitraum
      */
     public boolean isAvailableForPeriod(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
         return bookings.stream()
                 .filter(b -> b.getDeletedAt() == null)
-                .filter(b -> b.getReturnDate() == null) // Nur aktive Buchungen
+                .filter(b -> b.getReturnDate() == null)
                 .noneMatch(b -> {
-                    // Zeitraum-Überschneidung prüfen
                     java.time.LocalDateTime bookingStart = b.getStartDate();
                     java.time.LocalDateTime bookingEnd = b.getEndDate();
 
@@ -95,7 +107,6 @@ public class Item extends BaseEntity {
                         return false;
                     }
 
-                    // Überschneidung: startDate <= bookingEnd AND endDate >= bookingStart
                     return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
                 });
     }
@@ -132,6 +143,14 @@ public class Item extends BaseEntity {
 
     public void setProduct(Product product) {
         this.product = product;
+    }
+
+    public User getLender() {
+        return lender;
+    }
+
+    public void setLender(User lender) {
+        this.lender = lender;
     }
 
     public List<Booking> getBookings() {

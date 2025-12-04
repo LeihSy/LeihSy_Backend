@@ -7,6 +7,8 @@ public class ItemDTO {
     private Long id;
     private String invNumber;
     private String owner;
+    private Long lenderId;
+    private String lenderName;
     private Long productId;
     private String productName;
     private boolean available;
@@ -38,6 +40,22 @@ public class ItemDTO {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public Long getLenderId() {
+        return lenderId;
+    }
+
+    public void setLenderId(Long lenderId) {
+        this.lenderId = lenderId;
+    }
+
+    public String getLenderName() {
+        return lenderName;
+    }
+
+    public void setLenderName(String lenderName) {
+        this.lenderName = lenderName;
     }
 
     public Long getProductId() {

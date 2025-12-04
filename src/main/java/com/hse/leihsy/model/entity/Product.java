@@ -78,13 +78,6 @@ public class Product extends BaseEntity {
     private Location location;
 
     /**
-     * Verleiher (Person die Ausgabe/Rücknahme macht)
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lender_id")
-    private User lender;
-
-    /**
      * Physische Exemplare dieses Produkts
      */
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -199,14 +192,6 @@ public class Product extends BaseEntity {
 
     public void setLocation(Location location) {
         this.location = location;
-    }
-
-    public User getLender() {
-        return lender;
-    }
-
-    public void setLender(User lender) {
-        this.lender = lender;
     }
 
     public List<Item> getItems() {

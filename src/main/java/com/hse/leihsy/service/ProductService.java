@@ -51,11 +51,6 @@ public class ProductService {
         return productRepository.findByLocationId(locationId);
     }
 
-    // Products eines Verleihers
-    public List<Product> getProductsByLender(Long lenderId) {
-        return productRepository.findByLenderId(lenderId);
-    }
-
     // Suche nach Name
     public List<Product> searchProducts(String keyword) {
         return productRepository.searchByName(keyword);

@@ -1,15 +1,8 @@
 package com.hse.leihsy.controller;
 
-import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.model.dto.BookingDTO;
-import com.hse.leihsy.model.dto.BookingCreateRequestDTO;
-import com.hse.leihsy.model.dto.BookingConfirmRequestDTO;
-import com.hse.leihsy.model.dto.BookingSelectPickupRequestDTO;
-import com.hse.leihsy.model.dto.BookingProposeRequestDTO;
-import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.model.entity.User;
 import com.hse.leihsy.service.BookingService;
-import com.hse.leihsy.service.JwtService;
 import com.hse.leihsy.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,13 +11,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -34,441 +26,331 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
-    private final BookingMapper bookingMapper;
-    private final JwtService jwtService;
     private final UserService userService;
 
     // ========================================
     // GET ENDPOINTS
     // ========================================
 
-    @GetMapping("/{id}")
-    @Operation(
-            summary = "Booking nach ID abrufen",
-            description = "Ruft eine einzelne Buchung anhand ihrer ID ab. Nutzer können nur ihre eigenen Bookings sehen (außer Admins/Lender)."
-    )
+    @Operation(summary = "Eigene PENDING Anfragen als Verleiher abrufen",
+            description = "Holt alle offenen Buchungsanfragen für den eingeloggten Verleiher")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Booking erfolgreich abgerufen",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden"),
-            @ApiResponse(responseCode = "403", description = "Zugriff verweigert")
-    })
-    public ResponseEntity<BookingDTO> getBookingById(
-            @Parameter(description = "ID der Buchung", required = true, example = "1")
-            @PathVariable Long id) {
-
-        Booking booking = bookingService.getBookingById(id);
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
-    }
-
-    @GetMapping("/users/me")
-    @Operation(
-            summary = "Eigene Bookings abrufen (als Student)",
-            description = "Ruft alle Buchungen des aktuell eingeloggten Nutzers ab (als Entleiher/Student)."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der eigenen Bookings",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen",
+                    content = @Content(schema = @Schema(implementation = BookingDTO.class))),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
-    public ResponseEntity<List<BookingDTO>> getMyBookings() {
-        String uniqueId = jwtService.getCurrentUserUniqueId();
-        User user = userService.getOrCreateUser(
-                uniqueId,
-                jwtService.getCurrentUsername(),
-                jwtService.getCurrentUserEmail()
-        );
-
-        List<Booking> bookings = bookingService.getBookingsByUserId(user.getId());
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
-    }
-
-    @GetMapping("/users/{userId}")
-    @Operation(
-            summary = "Bookings eines bestimmten Users abrufen",
-            description = "Nur für Admins: Ruft alle Buchungen eines bestimmten Nutzers ab."
-    )
-    @PreAuthorize("hasRole('ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der Bookings des Users",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "403", description = "Keine Admin-Berechtigung"),
-            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
-    })
-    public ResponseEntity<List<BookingDTO>> getBookingsByUserId(
-            @Parameter(description = "User ID", required = true, example = "1")
-            @PathVariable Long userId) {
-
-        List<Booking> bookings = bookingService.getBookingsByUserId(userId);
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
-    }
-
-    @GetMapping("/lenders/me")
-    @Operation(
-            summary = "Eigene Bookings abrufen (als Verleiher)",
-            description = "Ruft alle Buchungen ab, bei denen der aktuelle Nutzer als Verleiher eingetragen ist."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der eigenen Verleiher-Bookings",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "403", description = "Keine Lender-Berechtigung")
-    })
-    public ResponseEntity<List<BookingDTO>> getMyLenderBookings() {
-        String uniqueId = jwtService.getCurrentUserUniqueId();
-        User user = userService.getOrCreateUser(
-                uniqueId,
-                jwtService.getCurrentUsername(),
-                jwtService.getCurrentUserEmail()
-        );
-
-        List<Booking> bookings = bookingService.getBookingsByLenderId(user.getId());
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
-    }
-
-    @GetMapping("/lenders/{lenderId}")
-    @Operation(
-            summary = "Bookings eines bestimmten Verleihers abrufen",
-            description = "Nur für Admins: Ruft alle Buchungen eines bestimmten Verleihers ab."
-    )
-    @PreAuthorize("hasRole('ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der Bookings des Verleihers",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "403", description = "Keine Admin-Berechtigung"),
-            @ApiResponse(responseCode = "404", description = "Lender nicht gefunden")
-    })
-    public ResponseEntity<List<BookingDTO>> getBookingsByLenderId(
-            @Parameter(description = "Lender ID", required = true, example = "2")
-            @PathVariable Long lenderId) {
-
-        List<Booking> bookings = bookingService.getBookingsByLenderId(lenderId);
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
-    }
-
     @GetMapping("/lenders/me/pending")
-    @Operation(
-            summary = "Offene Anfragen als Verleiher abrufen",
-            description = "Ruft alle Bookings im Status PENDING ab, bei denen der aktuelle Nutzer Verleiher ist."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der offenen Anfragen",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "403", description = "Keine Lender-Berechtigung")
-    })
-    public ResponseEntity<List<BookingDTO>> getMyPendingBookings() {
-        String uniqueId = jwtService.getCurrentUserUniqueId();
-        User user = userService.getOrCreateUser(
-                uniqueId,
-                jwtService.getCurrentUsername(),
-                jwtService.getCurrentUserEmail()
-        );
-
-        List<Booking> bookings = bookingService.getPendingBookingsByLenderId(user.getId());
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
+    public ResponseEntity<List<BookingDTO>> getPendingBookingsForCurrentLender() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
     }
 
-    @GetMapping("/lenders/{lenderId}/pending")
-    @Operation(
-            summary = "Offene Anfragen eines bestimmten Verleihers abrufen",
-            description = "Nur für Admins: Ruft alle offenen Buchungsanfragen eines Verleihers ab."
-    )
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Alle eigenen Buchungen als Verleiher abrufen",
+            description = "Holt alle Buchungen für die der eingeloggte User Verleiher ist")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der offenen Anfragen",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "403", description = "Keine Admin-Berechtigung")
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
-    public ResponseEntity<List<BookingDTO>> getPendingBookingsByLenderId(
-            @Parameter(description = "Lender ID", required = true, example = "2")
-            @PathVariable Long lenderId) {
-
-        List<Booking> bookings = bookingService.getPendingBookingsByLenderId(lenderId);
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
+    @GetMapping("/lenders/me")
+    public ResponseEntity<List<BookingDTO>> getMyLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
     }
 
+    @Operation(summary = "Eigene Buchungen als Student abrufen",
+            description = "Holt alle Buchungen die der eingeloggte User als Student/Entleiher erstellt hat")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
+    @GetMapping("/users/me")
+    public ResponseEntity<List<BookingDTO>> getMyBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getBookingsByUserId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Einzelne Buchung abrufen",
+            description = "Holt eine spezifische Buchung anhand ihrer ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Buchung gefunden"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingDTO> getBookingById(
+            @Parameter(description = "ID der Buchung") @PathVariable Long id) {
+        BookingDTO booking = bookingService.getBookingDTOById(id);
+        return ResponseEntity.ok(booking);
+    }
+
+    @Operation(summary = "Überfällige Buchungen abrufen",
+            description = "Holt alle Buchungen bei denen die Rückgabe überfällig ist")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
     @GetMapping("/overdue")
-    @Operation(
-            summary = "Überfällige Bookings abrufen",
-            description = "Ruft alle Bookings ab, bei denen die Rückgabe überfällig ist."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Liste der überfälligen Bookings",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "403", description = "Keine Lender/Admin-Berechtigung")
-    })
     public ResponseEntity<List<BookingDTO>> getOverdueBookings() {
-        List<Booking> bookings = bookingService.getOverdueBookings();
-        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
+        List<BookingDTO> bookings = bookingService.getOverdueBookings();
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Buchungen eines bestimmten Users abrufen",
+            description = "Holt alle Buchungen eines spezifischen Users (Admin-Funktion)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+    })
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<List<BookingDTO>> getBookingsByUserId(
+            @Parameter(description = "ID des Users") @PathVariable Long userId) {
+        List<BookingDTO> bookings = bookingService.getBookingsByUserId(userId);
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Buchungen eines bestimmten Verleihers abrufen",
+            description = "Holt alle Buchungen eines spezifischen Verleihers (Admin-Funktion)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+    })
+    @GetMapping("/lenders/{lenderId}")
+    public ResponseEntity<List<BookingDTO>> getBookingsByLenderId(
+            @Parameter(description = "ID des Verleihers") @PathVariable Long lenderId) {
+        List<BookingDTO> bookings = bookingService.getBookingsByLenderId(lenderId);
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "PENDING Buchungen eines bestimmten Verleihers abrufen",
+            description = "Holt alle offenen Anfragen eines spezifischen Verleihers (Admin-Funktion)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+    })
+    @GetMapping("/lenders/{lenderId}/pending")
+    public ResponseEntity<List<BookingDTO>> getPendingBookingsByLenderId(
+            @Parameter(description = "ID des Verleihers") @PathVariable Long lenderId) {
+        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(lenderId);
+        return ResponseEntity.ok(bookings);
     }
 
     // ========================================
-    // POST ENDPOINTS
+    // POST ENDPOINT - Buchung erstellen
     // ========================================
 
-    @PostMapping
-    @Operation(
-            summary = "Neue Booking erstellen",
-            description = "Erstellt eine neue Buchungsanfrage. Der aktuell eingeloggte User wird automatisch als Entleiher eingetragen."
-    )
+    @Operation(summary = "Neue Buchung erstellen",
+            description = "Erstellt eine neue Buchungsanfrage für ein Item")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Booking erfolgreich erstellt",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Ungültige Eingabedaten"),
-            @ApiResponse(responseCode = "404", description = "Item nicht gefunden"),
-            @ApiResponse(responseCode = "409", description = "Item nicht verfügbar im gewünschten Zeitraum")
+            @ApiResponse(responseCode = "201", description = "Buchung erfolgreich erstellt",
+                    content = @Content(schema = @Schema(implementation = BookingDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Item nicht gefunden")
     })
-    public ResponseEntity<BookingDTO> createBooking(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Booking-Daten",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = BookingCreateRequestDTO.class))
-            )
-            @Valid @RequestBody BookingCreateRequestDTO request) {
+    @PostMapping
+    public ResponseEntity<BookingDTO> createBooking(@RequestBody CreateBookingRequest request) {
+        User currentUser = userService.getCurrentUser();
 
-        String uniqueId = jwtService.getCurrentUserUniqueId();
-        User user = userService.getOrCreateUser(
-                uniqueId,
-                jwtService.getCurrentUsername(),
-                jwtService.getCurrentUserEmail()
-        );
-
-        Booking booking = bookingService.createBooking(
-                user.getId(),
+        BookingDTO booking = bookingService.createBooking(
+                currentUser.getId(),
                 request.getItemId(),
                 request.getStartDate(),
                 request.getEndDate(),
                 request.getMessage()
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(bookingMapper.toDTO(booking));
+        return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
 
     // ========================================
-    // PUT ENDPOINTS
+    // PUT ENDPOINTS - Buchungen aktualisieren
     // ========================================
 
+    @Operation(summary = "Buchung bestätigen und Termine vorschlagen",
+            description = "Verleiher bestätigt eine Buchungsanfrage und schlägt Abholtermine vor")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Buchung erfolgreich bestätigt"),
+            @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
+    })
     @PutMapping("/{id}/confirm")
-    @Operation(
-            summary = "Booking bestätigen und Termine vorschlagen",
-            description = "Verleiher bestätigt die Anfrage und schlägt mögliche Abholtermine vor. Status wechselt zu CONFIRMED."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Booking bestätigt",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Booking bereits bestätigt oder ungültiger Status"),
-            @ApiResponse(responseCode = "403", description = "Keine Lender-Berechtigung"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
-    })
     public ResponseEntity<BookingDTO> confirmBooking(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Liste vorgeschlagener Abholtermine",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = BookingConfirmRequestDTO.class))
-            )
-            @Valid @RequestBody BookingConfirmRequestDTO request) {
+            @Parameter(description = "ID der Buchung") @PathVariable Long id,
+            @RequestBody ConfirmBookingRequest request) {
 
-        Booking booking = bookingService.confirmBooking(id, request.getProposedPickups());
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
+        BookingDTO booking = bookingService.confirmBooking(id, request.getProposedPickups());
+        return ResponseEntity.ok(booking);
     }
 
+    @Operation(summary = "Abholtermin auswählen",
+            description = "Student wählt einen der vorgeschlagenen Abholtermine aus")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Termin erfolgreich ausgewählt"),
+            @ApiResponse(responseCode = "400", description = "Ungültiger Termin"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
+    })
     @PutMapping("/{id}/select-pickup")
-    @Operation(
-            summary = "Abholtermin auswählen",
-            description = "Student wählt einen der vorgeschlagenen Abholtermine aus. Dieser wird als confirmed_pickup gespeichert."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Termin ausgewählt",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Termin nicht in vorgeschlagenen Terminen enthalten"),
-            @ApiResponse(responseCode = "403", description = "Nur der Entleiher darf einen Termin auswählen"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
-    })
     public ResponseEntity<BookingDTO> selectPickupTime(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Ausgewählter Abholtermin",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = BookingSelectPickupRequestDTO.class))
-            )
-            @Valid @RequestBody BookingSelectPickupRequestDTO request) {
+            @Parameter(description = "ID der Buchung") @PathVariable Long id,
+            @RequestBody SelectPickupRequest request) {
 
-        Booking booking = bookingService.selectPickupTime(id, request.getSelectedPickup());
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
+        BookingDTO booking = bookingService.selectPickupTime(id, request.getSelectedPickup());
+        return ResponseEntity.ok(booking);
     }
 
-    @PutMapping("/{id}/propose")
-    @Operation(
-            summary = "Gegenvorschlag machen (Ping-Pong)",
-            description = "Student oder Verleiher macht einen Gegenvorschlag für Abholtermine. Die proposed_pickups werden überschrieben."
-    )
+    @Operation(summary = "Gegenvorschlag machen (Ping-Pong)",
+            description = "Student oder Verleiher macht einen neuen Terminvorschlag")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Gegenvorschlag gespeichert",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Booking bereits abgeschlossen oder storniert"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
+            @ApiResponse(responseCode = "200", description = "Vorschlag erfolgreich gemacht"),
+            @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
+    @PutMapping("/{id}/propose")
     public ResponseEntity<BookingDTO> proposeNewPickups(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Neue Terminvorschläge",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = BookingProposeRequestDTO.class))
-            )
-            @Valid @RequestBody BookingProposeRequestDTO request) {
+            @Parameter(description = "ID der Buchung") @PathVariable Long id,
+            @RequestBody ProposePickupsRequest request) {
 
-        String uniqueId = jwtService.getCurrentUserUniqueId();
-        User proposer = userService.getOrCreateUser(
-                uniqueId,
-                jwtService.getCurrentUsername(),
-                jwtService.getCurrentUserEmail()
-        );
+        User currentUser = userService.getCurrentUser();
 
-        Booking booking = bookingService.proposeNewPickups(
+        BookingDTO booking = bookingService.proposeNewPickups(
                 id,
-                proposer.getId(),
+                currentUser.getId(),
                 request.getProposedPickups()
         );
 
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
+        return ResponseEntity.ok(booking);
     }
 
-    @PutMapping("/{id}/reject")
-    @Operation(
-            summary = "Booking ablehnen",
-            description = "Verleiher lehnt die Buchungsanfrage ab. Booking wird als REJECTED markiert (Soft-Delete)."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
+    @Operation(summary = "Ausgabe dokumentieren",
+            description = "Verleiher dokumentiert die Ausgabe des Items an den Student")
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Booking abgelehnt",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Booking bereits abgeschlossen"),
-            @ApiResponse(responseCode = "403", description = "Keine Lender-Berechtigung"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
+            @ApiResponse(responseCode = "200", description = "Ausgabe erfolgreich dokumentiert"),
+            @ApiResponse(responseCode = "400", description = "Ausgabe nicht möglich"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
-    public ResponseEntity<BookingDTO> rejectBooking(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id) {
-
-        Booking booking = bookingService.rejectBooking(id);
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
-    }
-
     @PutMapping("/{id}/pickup")
-    @Operation(
-            summary = "Ausgabe dokumentieren",
-            description = "Verleiher dokumentiert die Ausgabe des Items. Distribution_date wird gesetzt, Status wechselt zu PICKED_UP."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Ausgabe dokumentiert",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Booking nicht bestätigt oder bereits ausgegeben"),
-            @ApiResponse(responseCode = "403", description = "Keine Lender-Berechtigung"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
-    })
     public ResponseEntity<BookingDTO> recordPickup(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @Parameter(description = "ID der Buchung") @PathVariable Long id) {
 
-        Booking booking = bookingService.recordPickup(id);
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
+        BookingDTO booking = bookingService.recordPickup(id);
+        return ResponseEntity.ok(booking);
     }
 
+    @Operation(summary = "Rückgabe dokumentieren",
+            description = "Verleiher dokumentiert die Rückgabe des Items vom Student")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rückgabe erfolgreich dokumentiert"),
+            @ApiResponse(responseCode = "400", description = "Rückgabe nicht möglich"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
+    })
     @PutMapping("/{id}/return")
-    @Operation(
-            summary = "Rückgabe dokumentieren",
-            description = "Verleiher dokumentiert die Rückgabe des Items. Return_date wird gesetzt, Status wechselt zu RETURNED."
-    )
-    @PreAuthorize("hasAnyRole('LENDER', 'ADMIN')")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Rückgabe dokumentiert",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BookingDTO.class))
-            ),
-            @ApiResponse(responseCode = "400", description = "Item nicht ausgegeben oder bereits zurückgegeben"),
-            @ApiResponse(responseCode = "403", description = "Keine Lender-Berechtigung"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
-    })
     public ResponseEntity<BookingDTO> recordReturn(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @Parameter(description = "ID der Buchung") @PathVariable Long id) {
 
-        Booking booking = bookingService.recordReturn(id);
-        return ResponseEntity.ok(bookingMapper.toDTO(booking));
+        BookingDTO booking = bookingService.recordReturn(id);
+        return ResponseEntity.ok(booking);
+    }
+
+    @Operation(summary = "Buchung ablehnen",
+            description = "Verleiher lehnt eine Buchungsanfrage ab")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Buchung erfolgreich abgelehnt"),
+            @ApiResponse(responseCode = "400", description = "Ablehnung nicht möglich"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
+    })
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<BookingDTO> rejectBooking(
+            @Parameter(description = "ID der Buchung") @PathVariable Long id) {
+
+        BookingDTO booking = bookingService.rejectBooking(id);
+        return ResponseEntity.ok(booking);
     }
 
     // ========================================
-    // DELETE ENDPOINTS
+    // DELETE ENDPOINT - Buchung stornieren
     // ========================================
 
-    @DeleteMapping("/{id}")
-    @Operation(
-            summary = "Booking stornieren",
-            description = "Student oder Admin storniert eine Booking. Status wechselt zu CANCELLED (Soft-Delete)."
-    )
+    @Operation(summary = "Buchung stornieren",
+            description = "Student oder Admin storniert eine Buchung")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Booking storniert"),
-            @ApiResponse(responseCode = "400", description = "Booking kann nicht mehr storniert werden"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung zum Stornieren"),
-            @ApiResponse(responseCode = "404", description = "Booking nicht gefunden")
+            @ApiResponse(responseCode = "204", description = "Buchung erfolgreich storniert"),
+            @ApiResponse(responseCode = "400", description = "Stornierung nicht möglich"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancelBooking(
-            @Parameter(description = "Booking ID", required = true, example = "1")
-            @PathVariable Long id) {
+            @Parameter(description = "ID der Buchung") @PathVariable Long id) {
 
         bookingService.cancelBooking(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========================================
+    // REQUEST DTOs (Inner Classes)
+    // ========================================
+
+    @Schema(description = "Anfrage zum Erstellen einer neuen Buchung")
+    public static class CreateBookingRequest {
+        @Schema(description = "ID des Items", example = "1")
+        private Long itemId;
+
+        @Schema(description = "Gewünschter Ausleihbeginn", example = "2025-12-10T09:00:00")
+        private LocalDateTime startDate;
+
+        @Schema(description = "Gewünschtes Ausleihende", example = "2025-12-15T17:00:00")
+        private LocalDateTime endDate;
+
+        @Schema(description = "Optionale Nachricht an den Verleiher", example = "Brauche es für Projekt")
+        private String message;
+
+        // Getters & Setters
+        public Long getItemId() { return itemId; }
+        public void setItemId(Long itemId) { this.itemId = itemId; }
+        public LocalDateTime getStartDate() { return startDate; }
+        public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
+        public LocalDateTime getEndDate() { return endDate; }
+        public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
+    @Schema(description = "Anfrage zum Bestätigen einer Buchung mit Terminvorschlägen")
+    public static class ConfirmBookingRequest {
+        @Schema(description = "Liste mit vorgeschlagenen Abholterminen")
+        private List<LocalDateTime> proposedPickups;
+
+        public List<LocalDateTime> getProposedPickups() { return proposedPickups; }
+        public void setProposedPickups(List<LocalDateTime> proposedPickups) { this.proposedPickups = proposedPickups; }
+    }
+
+    @Schema(description = "Anfrage zum Auswählen eines Abholtermins")
+    public static class SelectPickupRequest {
+        @Schema(description = "Ausgewählter Abholtermin", example = "2025-12-10T09:00:00")
+        private LocalDateTime selectedPickup;
+
+        public LocalDateTime getSelectedPickup() { return selectedPickup; }
+        public void setSelectedPickup(LocalDateTime selectedPickup) { this.selectedPickup = selectedPickup; }
+    }
+
+    @Schema(description = "Anfrage zum Machen eines Gegenvorschlags")
+    public static class ProposePickupsRequest {
+        @Schema(description = "Liste mit neuen Terminvorschlägen")
+        private List<LocalDateTime> proposedPickups;
+
+        public List<LocalDateTime> getProposedPickups() { return proposedPickups; }
+        public void setProposedPickups(List<LocalDateTime> proposedPickups) { this.proposedPickups = proposedPickups; }
     }
 }

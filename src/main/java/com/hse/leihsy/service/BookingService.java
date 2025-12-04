@@ -3,6 +3,8 @@ package com.hse.leihsy.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hse.leihsy.mapper.BookingMapper;
+import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.model.entity.BookingStatus;
 import com.hse.leihsy.model.entity.Item;
@@ -25,45 +27,62 @@ public class BookingService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final BookingMapper bookingMapper;
 
     // ========================================
-    // GET METHODEN
+    // GET METHODEN - MIT DTOs
     // ========================================
 
     /**
-     * Holt eine Booking anhand der ID
+     * Holt eine Booking als DTO anhand der ID
      */
-    public Booking getBookingById(Long id) {
+    public BookingDTO getBookingDTOById(Long id) {
+        Booking booking = getBookingById(id);
+        return bookingMapper.toDTO(booking);
+    }
+
+    /**
+     * Holt alle Bookings eines Users als DTOs (als Student/Entleiher)
+     */
+    public List<BookingDTO> getBookingsByUserId(Long userId) {
+        List<Booking> bookings = bookingRepository.findByUserId(userId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt alle Bookings eines Verleihers als DTOs
+     */
+    public List<BookingDTO> getBookingsByLenderId(Long lenderId) {
+        List<Booking> bookings = bookingRepository.findByLenderId(lenderId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt alle PENDING Bookings eines Verleihers als DTOs
+     */
+    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId) {
+        List<Booking> bookings = bookingRepository.findPendingByLenderId(lenderId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt alle überfälligen Bookings als DTOs
+     */
+    public List<BookingDTO> getOverdueBookings() {
+        List<Booking> bookings = bookingRepository.findOverdue(LocalDateTime.now());
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    // ========================================
+    // GET METHODEN - ENTITIES (für interne Nutzung)
+    // ========================================
+
+    /**
+     * Holt eine Booking Entity anhand der ID (nur intern nutzen!)
+     */
+    private Booking getBookingById(Long id) {
         return bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
-    }
-
-    /**
-     * Holt alle Bookings eines Users (als Student/Entleiher)
-     */
-    public List<Booking> getBookingsByUserId(Long userId) {
-        return bookingRepository.findByUserId(userId);
-    }
-
-    /**
-     * Holt alle Bookings eines Verleihers
-     */
-    public List<Booking> getBookingsByLenderId(Long lenderId) {
-        return bookingRepository.findByLenderId(lenderId);
-    }
-
-    /**
-     * Holt alle PENDING Bookings eines Verleihers
-     */
-    public List<Booking> getPendingBookingsByLenderId(Long lenderId) {
-        return bookingRepository.findPendingByLenderId(lenderId);
-    }
-
-    /**
-     * Holt alle überfälligen Bookings (return_date < jetzt und noch nicht zurückgegeben)
-     */
-    public List<Booking> getOverdueBookings() {
-        return bookingRepository.findOverdue(LocalDateTime.now());
     }
 
     // ========================================
@@ -71,17 +90,11 @@ public class BookingService {
     // ========================================
 
     /**
-     * Erstellt eine neue Booking
-     * @param userId ID des Entleihers
-     * @param itemId ID des Items
-     * @param startDate Gewünschter Ausleihbeginn
-     * @param endDate Gewünschtes Ausleihende
-     * @param message Optionale Nachricht
-     * @return Die erstellte Booking
+     * Erstellt eine neue Booking und gibt DTO zurück
      */
     @Transactional
-    public Booking createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                 LocalDateTime endDate, String message) {
+    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
+                                    LocalDateTime endDate, String message) {
 
         // User validieren
         User user = userRepository.findById(userId)
@@ -102,11 +115,18 @@ public class BookingService {
             throw new RuntimeException("Item is not available in the requested time range");
         }
 
-        // Booking erstellen (Konstruktor setzt lender automatisch aus item.getLender())
-        Booking booking = new Booking(user, item, startDate, endDate);
+        // Booking erstellen
+        Booking booking = new Booking();
+        booking.setUser(user);
+        booking.setLender(item.getLender());
+        booking.setItem(item);
+        booking.setMessage(message);
+        booking.setStartDate(startDate);
+        booking.setEndDate(endDate);
         booking.setMessage(message);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);  // ← DTO zurückgeben!
     }
 
     /**
@@ -115,7 +135,7 @@ public class BookingService {
     private boolean checkAvailability(Long itemId, LocalDateTime startDate, LocalDateTime endDate) {
         List<Booking> conflictingBookings = bookingRepository.findAll().stream()
                 .filter(booking -> booking.getItem().getId().equals(itemId))
-                .filter(booking -> booking.getDeletedAt() == null) // Nur aktive Bookings
+                .filter(booking -> booking.getDeletedAt() == null)
                 .filter(booking -> {
                     BookingStatus status = booking.calculateStatus();
                     return status == BookingStatus.PENDING
@@ -123,7 +143,6 @@ public class BookingService {
                             || status == BookingStatus.PICKED_UP;
                 })
                 .filter(booking -> {
-                    // Zeitraum-Überschneidung prüfen
                     return !(endDate.isBefore(booking.getStartDate())
                             || startDate.isAfter(booking.getEndDate()));
                 })
@@ -133,62 +152,52 @@ public class BookingService {
     }
 
     // ========================================
-    // UPDATE METHODEN
+    // UPDATE METHODEN - MIT DTOs
     // ========================================
 
     /**
      * Verleiher bestätigt Booking und schlägt Abholtermine vor
-     * @param id Booking ID
-     * @param proposedPickups Liste mit vorgeschlagenen Abholterminen
-     * @return Aktualisierte Booking
      */
     @Transactional
-    public Booking confirmBooking(Long id, List<LocalDateTime> proposedPickups) {
+    public BookingDTO confirmBooking(Long id, List<LocalDateTime> proposedPickups) {
         Booking booking = getBookingById(id);
 
-        if (booking.calculateStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Booking is not in PENDING status");
+        if (booking.getConfirmedPickup() != null) {
+            throw new IllegalStateException("Booking already confirmed");
+        }
+        if (booking.getDeletedAt() != null) {
+            throw new IllegalStateException("Cannot confirm cancelled booking");
         }
 
         String pickupsJson = convertPickupsToJson(proposedPickups);
         booking.setProposedPickups(pickupsJson);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
     }
 
     /**
      * Student wählt einen der vorgeschlagenen Abholtermine aus
-     * @param id Booking ID
-     * @param selectedPickup Gewählter Termin
-     * @return Aktualisierte Booking
      */
     @Transactional
-    public Booking selectPickupTime(Long id, LocalDateTime selectedPickup) {
+    public BookingDTO selectPickupTime(Long id, LocalDateTime selectedPickup) {
         Booking booking = getBookingById(id);
 
-        if (booking.calculateStatus() != BookingStatus.CONFIRMED) {
-            throw new RuntimeException("Booking is not in CONFIRMED status");
-        }
-
-        // Prüfen ob gewählter Termin in vorgeschlagenen Terminen enthalten ist
         List<LocalDateTime> proposedPickups = convertJsonToPickups(booking.getProposedPickups());
         if (!proposedPickups.contains(selectedPickup)) {
             throw new RuntimeException("Selected pickup time is not in proposed pickups");
         }
 
         booking.setConfirmedPickup(selectedPickup);
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
     }
 
     /**
      * Gegenvorschlag machen (Ping-Pong)
-     * @param id Booking ID
-     * @param proposerId ID der Person die vorschlägt
-     * @param proposedPickups Neue Terminvorschläge
-     * @return Aktualisierte Booking
      */
     @Transactional
-    public Booking proposeNewPickups(Long id, Long proposerId, List<LocalDateTime> proposedPickups) {
+    public BookingDTO proposeNewPickups(Long id, Long proposerId, List<LocalDateTime> proposedPickups) {
         Booking booking = getBookingById(id);
 
         BookingStatus status = booking.calculateStatus();
@@ -200,37 +209,41 @@ public class BookingService {
         String pickupsJson = convertPickupsToJson(proposedPickups);
         booking.setProposedPickups(pickupsJson);
         booking.setProposalBy(userRepository.findById(proposerId).orElseThrow());
-
-        // confirmed_pickup zurücksetzen wenn neuer Vorschlag kommt
         booking.setConfirmedPickup(null);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
     }
 
     /**
      * Verleiher lehnt Booking ab
-     * @param id Booking ID
-     * @return Aktualisierte Booking
      */
     @Transactional
-    public Booking rejectBooking(Long id) {
+    public BookingDTO rejectBooking(Long id) {
         Booking booking = getBookingById(id);
 
         if (booking.calculateStatus() == BookingStatus.RETURNED) {
             throw new RuntimeException("Cannot reject a returned booking");
         }
 
+        if (booking.calculateStatus() != BookingStatus.PENDING &&
+                booking.calculateStatus() != BookingStatus.CONFIRMED) {
+            throw new IllegalStateException("Can only reject PENDING or CONFIRMED bookings");
+        }
+        if (booking.getDeletedAt() != null) {
+            throw new IllegalStateException("Booking already cancelled");
+        }
+
         booking.setDeletedAt(LocalDateTime.now());
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
     }
 
     /**
      * Verleiher dokumentiert Ausgabe
-     * @param id Booking ID
-     * @return Aktualisierte Booking
      */
     @Transactional
-    public Booking recordPickup(Long id) {
+    public BookingDTO recordPickup(Long id) {
         Booking booking = getBookingById(id);
 
         if (booking.getConfirmedPickup() == null) {
@@ -242,16 +255,15 @@ public class BookingService {
         }
 
         booking.setDistributionDate(LocalDateTime.now());
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
     }
 
     /**
      * Verleiher dokumentiert Rückgabe
-     * @param id Booking ID
-     * @return Aktualisierte Booking
      */
     @Transactional
-    public Booking recordReturn(Long id) {
+    public BookingDTO recordReturn(Long id) {
         Booking booking = getBookingById(id);
 
         if (booking.getDistributionDate() == null) {
@@ -263,12 +275,12 @@ public class BookingService {
         }
 
         booking.setReturnDate(LocalDateTime.now());
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
     }
 
     /**
      * Student oder Admin storniert Booking
-     * @param id Booking ID
      */
     @Transactional
     public void cancelBooking(Long id) {
@@ -287,9 +299,6 @@ public class BookingService {
     // HELPER METHODEN (JSON KONVERTIERUNG)
     // ========================================
 
-    /**
-     * Konvertiert eine Liste von LocalDateTime zu JSON String
-     */
     private String convertPickupsToJson(List<LocalDateTime> pickups) {
         try {
             return objectMapper.writeValueAsString(pickups);
@@ -298,9 +307,6 @@ public class BookingService {
         }
     }
 
-    /**
-     * Konvertiert JSON String zurück zu Liste von LocalDateTime
-     */
     private List<LocalDateTime> convertJsonToPickups(String json) {
         if (json == null || json.isBlank()) {
             return List.of();

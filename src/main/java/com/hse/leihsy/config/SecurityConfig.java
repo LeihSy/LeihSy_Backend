@@ -9,40 +9,49 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+    private final UserSyncFilter userSyncFilter;
+
+    public SecurityConfig(UserSyncFilter userSyncFilter) {
+        this.userSyncFilter = userSyncFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS aktivieren
-                .csrf(csrf -> csrf.disable()) // Für REST API
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Öffentliche Endpoints (z.B. für Frontend Login-Redirect)
+                        // Oeffentliche Endpoints
                         .requestMatchers("/", "/login", "/error").permitAll()
 
                         // H2 Console (nur Development!)
                         .requestMatchers("/h2-console/**").permitAll()
 
-                        // Swagger UI (optional öffentlich für Development)
+                        // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // Bilder öffentlich zugänglich (für Katalog-Ansicht)
+                        // Bilder oeffentlich zugaenglich (fuer Katalog-Ansicht)
                         .requestMatchers("/api/images/**").permitAll()
 
-                        // Products GET-Endpoints öffentlich (für Katalog)
+                        // Products GET-Endpoints oeffentlich (fuer Katalog)
                         .requestMatchers("GET", "/api/products/**").permitAll()
                         .requestMatchers("GET", "/api/categories/**").permitAll()
                         .requestMatchers("GET", "/api/locations/**").permitAll()
+
+                        // User-Info Endpoint (fuer Frontend um aktuellen User zu holen)
+                        .requestMatchers("GET", "/api/users/me").authenticated()
 
                         // Alle anderen API-Endpoints erfordern Authentifizierung
                         .requestMatchers("/api/**").authenticated()
@@ -56,7 +65,9 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                );
+                )
+                // UserSyncFilter NACH der JWT-Authentifizierung einfuegen
+                .addFilterAfter(userSyncFilter, UsernamePasswordAuthenticationFilter.class);
 
         // H2 Console Frame-Options deaktivieren (nur Development!)
         http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
@@ -72,7 +83,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Erlaubte Origins (Frontend URL)
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:4200",
+                "https://leihsy.hs-esslingen.de"  // Fuer spaeteres Deployment
+        ));
 
         // Erlaubte HTTP-Methoden
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -80,13 +94,13 @@ public class SecurityConfig {
         // Erlaubte Headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
-        // Credentials erlauben (für Cookies/Auth-Header)
+        // Credentials erlauben (fuer Cookies/Auth-Header)
         configuration.setAllowCredentials(true);
 
         // Preflight-Request Cache (1 Stunde)
         configuration.setMaxAge(3600L);
 
-        // Welche Headers im Response sichtbar sein dürfen
+        // Welche Headers im Response sichtbar sein duerfen
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -96,19 +110,13 @@ public class SecurityConfig {
     }
 
     /**
-     * Konvertiert JWT Rollen zu Spring Security Authorities
+     * Konvertiert JWT Rollen zu Spring Security Authorities.
+     * Keycloak speichert Rollen unter verschiedenen Pfaden - wir unterstuetzen beide.
      */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-
-        // Keycloak speichert Rollen unter "realm_access.roles"
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("realm_access.roles");
-        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
         return jwtAuthenticationConverter;
     }
 }

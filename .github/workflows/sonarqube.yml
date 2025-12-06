@@ -46,5 +46,17 @@ jobs:
           -Dsonar.sources=src/main/java
           -Dsonar.exclusions=**/target/**
           -Dsonar.tests=src/test/java
-          -Dsonar.test.inclusions=**/*Test.java
+          -Dsonar.test.inclusions=**/*Test.java,**/*Tests.java
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          -Dsonar.java.coveragePlugin=jacoco
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      - name: Upload coverage reports to Codecov (optional)
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}

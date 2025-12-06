@@ -10,17 +10,12 @@ import org.springframework.context.annotation.Profile;
 import java.math.BigDecimal;
 
 /**
- * DataInitializer - Lädt Testdaten beim Start
+ * DataInitializer - Laedt Testdaten beim Start
  * NUR AKTIV IM DEV-PROFIL
- *
- * In Produktion (PostgreSQL) werden keine Testdaten geladen
  */
 @Configuration
 public class DataInitializer {
 
-    /**
-     * Testdaten laden - nur im Development Profil
-     */
     @Bean
     @Profile("dev")
     public CommandLineRunner loadTestData(
@@ -41,7 +36,7 @@ public class DataInitializer {
             Category catVR = new Category("VR-Equipment");
             Category catPhoto = new Category("Foto-Equipment");
             Category catAudio = new Category("Audio-Equipment");
-            Category catIT = new Category("IT-Geräte");
+            Category catIT = new Category("IT-Geraete");
 
             categoryRepo.save(catVR);
             categoryRepo.save(catPhoto);
@@ -86,62 +81,61 @@ public class DataInitializer {
             // ==========================================
 
             // VR Products
-            Product metaQuest3 = new Product("Meta Quest 3",
-                    "Die Meta Quest 3 ist ein Mixed-Reality-Headset mit hochauflösendem Display und verbessertem Tracking.");
+            Product metaQuest3 = new Product();
+            metaQuest3.setName("Meta Quest 3");
+            metaQuest3.setDescription("Die Meta Quest 3 ist ein Mixed-Reality-Headset mit hochaufloesendem Display und verbessertem Tracking.");
             metaQuest3.setCategory(catVR);
             metaQuest3.setLocation(locVRLab);
-            //metaQuest3.setLender(verleiherChristian);
             metaQuest3.setExpiryDate(14);
             metaQuest3.setPrice(new BigDecimal("5.00"));
             metaQuest3.setAccessories("[\"2x Controller\", \"Ladekabel USB-C\", \"Tragetasche\"]");
-            metaQuest3.setImageUrl("/assets/images/meta-quest-3.jpg");
 
-            Product htcVive = new Product("HTC Vive Pro 2",
-                    "Professionelles VR-Headset mit 5K-Auflösung und präzisom Tracking.");
+            Product htcVive = new Product();
+            htcVive.setName("HTC Vive Pro 2");
+            htcVive.setDescription("Professionelles VR-Headset mit 5K-Aufloesung und praezisem Tracking.");
             htcVive.setCategory(catVR);
             htcVive.setLocation(locVRLab);
-            //htcVive.setLender(verleiherChristian);
             htcVive.setExpiryDate(7);
             htcVive.setPrice(new BigDecimal("10.00"));
             htcVive.setAccessories("[\"2x Controller\", \"2x Basisstationen\", \"Linkbox\"]");
 
             // Foto Products
-            Product sonyA7 = new Product("Sony Alpha 7 IV",
-                    "Spiegellose Vollformatkamera mit 33 Megapixel und 4K Video.");
+            Product sonyA7 = new Product();
+            sonyA7.setName("Sony Alpha 7 IV");
+            sonyA7.setDescription("Spiegellose Vollformatkamera mit 33 Megapixel und 4K Video.");
             sonyA7.setCategory(catPhoto);
             sonyA7.setLocation(locKEIM);
-            //sonyA7.setLender(verleiherChristian);
             sonyA7.setExpiryDate(7);
             sonyA7.setPrice(new BigDecimal("15.00"));
-            sonyA7.setAccessories("[\"Objektiv 28-70mm\", \"Akku\", \"Ladegerät\", \"Tragegurt\"]");
+            sonyA7.setAccessories("[\"Objektiv 28-70mm\", \"Akku\", \"Ladegeraet\", \"Tragegurt\"]");
 
-            Product canonEOS = new Product("Canon EOS R5",
-                    "Professionelle Vollformatkamera mit 45 MP und 8K Video.");
+            Product canonEOS = new Product();
+            canonEOS.setName("Canon EOS R5");
+            canonEOS.setDescription("Professionelle Vollformatkamera mit 45 MP und 8K Video.");
             canonEOS.setCategory(catPhoto);
             canonEOS.setLocation(locBib);
-            //canonEOS.setLender(verleiherAndreas);
             canonEOS.setExpiryDate(7);
             canonEOS.setPrice(new BigDecimal("20.00"));
 
             // Audio Products
-            Product rodeNT1 = new Product("Rode NT1-A Mikrofon",
-                    "Studiomikrofon mit niedriegem Eigenrauschen, ideal fuer Podcasts.");
+            Product rodeNT1 = new Product();
+            rodeNT1.setName("Rode NT1-A Mikrofon");
+            rodeNT1.setDescription("Studiomikrofon mit niedrigem Eigenrauschen, ideal fuer Podcasts.");
             rodeNT1.setCategory(catAudio);
             rodeNT1.setLocation(locKEIM);
-            //rodeNT1.setLender(verleiherAndreas);
             rodeNT1.setExpiryDate(14);
             rodeNT1.setPrice(new BigDecimal("3.00"));
             rodeNT1.setAccessories("[\"Spinne\", \"Popschutz\", \"XLR-Kabel\"]");
 
             // IT Products
-            Product macbookPro = new Product("MacBook Pro 14\" M3",
-                    "Apple MacBook Pro mit M3 Chip, 18GB RAM, 512GB SSD.");
+            Product macbookPro = new Product();
+            macbookPro.setName("MacBook Pro 14 Zoll M3");
+            macbookPro.setDescription("Apple MacBook Pro mit M3 Chip, 18GB RAM, 512GB SSD.");
             macbookPro.setCategory(catIT);
             macbookPro.setLocation(locKEIM);
-            //macbookPro.setLender(verleiherAndreas);
             macbookPro.setExpiryDate(7);
             macbookPro.setPrice(new BigDecimal("25.00"));
-            macbookPro.setAccessories("[\"Ladegerät\", \"USB-C Hub\"]");
+            macbookPro.setAccessories("[\"Ladegeraet\", \"USB-C Hub\"]");
 
             productRepo.save(metaQuest3);
             productRepo.save(htcVive);
@@ -156,28 +150,77 @@ public class DataInitializer {
             // 5. Items erstellen (physische Exemplare)
             // ==========================================
 
-            // Meta Quest 3 - 3 Stück
-            Item quest1 = new Item("VR-001", "Christian Haas", metaQuest3);
-            Item quest2 = new Item("VR-002", "Christian Haas", metaQuest3);
-            Item quest3 = new Item("VR-003", "Christian Haas", metaQuest3);
+            // Meta Quest 3 - 3 Stueck (Verleiher: Christian)
+            Item quest1 = new Item();
+            quest1.setInvNumber("VR-001");
+            quest1.setOwner("Christian Haas");
+            quest1.setProduct(metaQuest3);
+            quest1.setLender(verleiherChristian);
 
-            // HTC Vive - 1 Stück
-            Item vive1 = new Item("VR-010", "Christian Haas", htcVive);
+            Item quest2 = new Item();
+            quest2.setInvNumber("VR-002");
+            quest2.setOwner("Christian Haas");
+            quest2.setProduct(metaQuest3);
+            quest2.setLender(verleiherChristian);
 
-            // Sony A7 - 2 Stück
-            Item sony1 = new Item("CAM-001", "Christian Haas", sonyA7);
-            Item sony2 = new Item("CAM-002", "Christian Haas", sonyA7);
+            Item quest3 = new Item();
+            quest3.setInvNumber("VR-003");
+            quest3.setOwner("Christian Haas");
+            quest3.setProduct(metaQuest3);
+            quest3.setLender(verleiherChristian);
 
-            // Canon - 1 Stück
-            Item canon1 = new Item("CAM-010", "Andreas Heinrich", canonEOS);
+            // HTC Vive - 1 Stueck (Verleiher: Christian)
+            Item vive1 = new Item();
+            vive1.setInvNumber("VR-010");
+            vive1.setOwner("Christian Haas");
+            vive1.setProduct(htcVive);
+            vive1.setLender(verleiherChristian);
 
-            // Mikrofon - 2 Stück
-            Item rode1 = new Item("AUD-001", "KEIM", rodeNT1);
-            Item rode2 = new Item("AUD-002", "KEIM", rodeNT1);
+            // Sony A7 - 2 Stueck (Verleiher: Christian)
+            Item sony1 = new Item();
+            sony1.setInvNumber("CAM-001");
+            sony1.setOwner("Christian Haas");
+            sony1.setProduct(sonyA7);
+            sony1.setLender(verleiherChristian);
 
-            // MacBook - 2 Stück
-            Item mac1 = new Item("IT-001", "KEIM", macbookPro);
-            Item mac2 = new Item("IT-002", "KEIM", macbookPro);
+            Item sony2 = new Item();
+            sony2.setInvNumber("CAM-002");
+            sony2.setOwner("Christian Haas");
+            sony2.setProduct(sonyA7);
+            sony2.setLender(verleiherChristian);
+
+            // Canon - 1 Stueck (Verleiher: Andreas)
+            Item canon1 = new Item();
+            canon1.setInvNumber("CAM-010");
+            canon1.setOwner("Andreas Heinrich");
+            canon1.setProduct(canonEOS);
+            canon1.setLender(verleiherAndreas);
+
+            // Mikrofon - 2 Stueck (Verleiher: Andreas)
+            Item rode1 = new Item();
+            rode1.setInvNumber("AUD-001");
+            rode1.setOwner("KEIM");
+            rode1.setProduct(rodeNT1);
+            rode1.setLender(verleiherAndreas);
+
+            Item rode2 = new Item();
+            rode2.setInvNumber("AUD-002");
+            rode2.setOwner("KEIM");
+            rode2.setProduct(rodeNT1);
+            rode2.setLender(verleiherAndreas);
+
+            // MacBook - 2 Stueck (Verleiher: Andreas)
+            Item mac1 = new Item();
+            mac1.setInvNumber("IT-001");
+            mac1.setOwner("KEIM");
+            mac1.setProduct(macbookPro);
+            mac1.setLender(verleiherAndreas);
+
+            Item mac2 = new Item();
+            mac2.setInvNumber("IT-002");
+            mac2.setOwner("KEIM");
+            mac2.setProduct(macbookPro);
+            mac2.setLender(verleiherAndreas);
 
             itemRepo.save(quest1);
             itemRepo.save(quest2);
@@ -206,14 +249,12 @@ public class DataInitializer {
             System.out.println(itemRepo.count() + " Items");
             System.out.println("========================================");
             System.out.println("API: http://localhost:8080/api/products");
+            System.out.println("Swagger: http://localhost:8080/swagger-ui.html");
             System.out.println("H2 Console: http://localhost:8080/h2-console");
             System.out.println("========================================\n");
         };
     }
 
-    /**
-     * Produktion - keine Testdaten laden
-     */
     @Bean
     @Profile("prod")
     public CommandLineRunner productionStartup() {

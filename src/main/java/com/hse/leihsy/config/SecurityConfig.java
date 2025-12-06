@@ -31,6 +31,9 @@ public class SecurityConfig {
                         // Öffentliche Endpoints (z.B. für Frontend Login-Redirect)
                         .requestMatchers("/", "/login", "/error").permitAll()
 
+                        // Actuator Health Endpoints (für Docker Health Checks)
+                        .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+
                         // H2 Console (nur Development!)
                         .requestMatchers("/h2-console/**").permitAll()
 

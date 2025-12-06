@@ -1,6 +1,10 @@
 package com.hse.leihsy.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -9,6 +13,10 @@ import java.util.List;
 /**
  * DTO fuer User-Daten inkl. Keycloak-Rollen
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Benutzer-Daten")
 public class UserDTO {
 
@@ -24,53 +32,9 @@ public class UserDTO {
     @Schema(description = "Budget fuer Ausleihen", example = "100.00")
     private BigDecimal budget;
 
+    @Builder.Default
     @Schema(description = "Rollen aus Keycloak", example = "[\"ROLE_STUDENT\", \"ROLE_LENDER\"]")
     private List<String> roles = new ArrayList<>();
-
-    // Constructors
-    public UserDTO() {
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUniqueId() {
-        return uniqueId;
-    }
-
-    public void setUniqueId(String uniqueId) {
-        this.uniqueId = uniqueId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public BigDecimal getBudget() {
-        return budget;
-    }
-
-    public void setBudget(BigDecimal budget) {
-        this.budget = budget;
-    }
-
-    public List<String> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List<String> roles) {
-        this.roles = roles;
-    }
 
     // Helper Methoden fuer Rollen-Check
     public boolean isAdmin() {

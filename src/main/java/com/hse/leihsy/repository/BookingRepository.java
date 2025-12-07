@@ -16,6 +16,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     List<Booking> findByUserId(@Param("userId") Long userId);
 
+    // Gelöschte/Stornierte Buchungen eines Users (als Entleiher)
+    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.deletedAt IS NOT NULL ORDER BY b.deletedAt DESC")
+    List<Booking> findDeletedByUserId(@Param("userId") Long userId);
+
     // Buchungen für einen Verleiher
     @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     List<Booking> findByLenderId(@Param("lenderId") Long lenderId);

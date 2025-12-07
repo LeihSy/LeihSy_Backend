@@ -50,6 +50,14 @@ public class BookingService {
     }
 
     /**
+     * Holt alle gelöschten/stornierten Bookings eines Users als DTOs (als Student/Entleiher)
+     */
+    public List<BookingDTO> getDeletedBookingsByUserId(Long userId) {
+        List<Booking> bookings = bookingRepository.findDeletedByUserId(userId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
      * Holt alle Bookings eines Verleihers als DTOs
      */
     public List<BookingDTO> getBookingsByLenderId(Long lenderId) {

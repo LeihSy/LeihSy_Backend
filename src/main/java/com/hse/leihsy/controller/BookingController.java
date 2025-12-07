@@ -72,6 +72,20 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @Operation(summary = "Eigene gelöschte/stornierte Buchungen als Student abrufen",
+            description = "Holt alle gelöschten/stornierten Buchungen die der eingeloggte User als Student/Entleiher erstellt hat")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen",
+                    content = @Content(schema = @Schema(implementation = BookingDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
+    @GetMapping("/users/me/deleted")
+    public ResponseEntity<List<BookingDTO>> getMyDeletedBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getDeletedBookingsByUserId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
     @Operation(summary = "Einzelne Buchung abrufen",
             description = "Holt eine spezifische Buchung anhand ihrer ID")
     @ApiResponses(value = {

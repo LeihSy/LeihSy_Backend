@@ -32,6 +32,10 @@ public class ItemService {
         return itemRepository.findAllActive();
     }
 
+    public List<Item> getAllDeletedItems() {
+        return itemRepository.findAllDeleted();
+    }
+
     public Item getItemById(Long id) {
         return itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + id));

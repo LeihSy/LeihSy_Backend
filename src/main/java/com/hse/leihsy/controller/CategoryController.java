@@ -1,5 +1,7 @@
 package com.hse.leihsy.controller;
 
+import com.hse.leihsy.mapper.CategoryMapper;
+import com.hse.leihsy.model.dto.CategoryDTO;
 import com.hse.leihsy.model.entity.Category;
 import com.hse.leihsy.repository.CategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,9 +19,11 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
 
-    public CategoryController(CategoryRepository categoryRepository) {
+    public CategoryController(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
         this.categoryRepository = categoryRepository;
+        this.categoryMapper = categoryMapper;
     }
 
 
@@ -28,9 +32,10 @@ public class CategoryController {
             @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
     })
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         List<Category> categories = categoryRepository.findAllActive();
-        return ResponseEntity.ok(categories);
+        List<CategoryDTO> categoryDTOs = categoryMapper.toDTOList(categories);
+        return ResponseEntity.ok(categoryDTOs);
     }
 
 
@@ -40,10 +45,11 @@ public class CategoryController {
             @ApiResponse(responseCode = "404", description = "Category not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(
+    public ResponseEntity<CategoryDTO> getCategoryById(
             @Parameter(description = "ID of the category to retrieve") @PathVariable Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + id));
-        return ResponseEntity.ok(category);
+        CategoryDTO categoryDTO = categoryMapper.toDTO(category);
+        return ResponseEntity.ok(categoryDTO);
     }
 }

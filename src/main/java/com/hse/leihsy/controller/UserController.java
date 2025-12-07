@@ -70,6 +70,23 @@ public class UserController {
     }
 
     /**
+     * Gibt einen User anhand seines Benutzernamens (name) zurueck (nur fuer Admins)
+     */
+    @Operation(summary = "User per Benutzername abrufen",
+            description = "Gibt einen User anhand seines Benutzernamens zurueck")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User gefunden",
+                    content = @Content(schema = @Schema(implementation = UserDTO.class))),
+            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
+    })
+    @GetMapping("/names/{name}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String name) {
+        User user = userService.getUserByName(name);
+        UserDTO dto = convertToDTO(user, List.of());
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      * Konvertiert User Entity zu DTO
      */
     private UserDTO convertToDTO(User user, List<String> roles) {

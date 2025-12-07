@@ -1,5 +1,6 @@
 package com.hse.leihsy.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,7 @@ public class Location extends BaseEntity {
     /**
      * Products an diesem Standort
      */
+    @JsonIgnore
     @OneToMany(mappedBy = "location", fetch = FetchType.LAZY)
     private List<Product> products = new ArrayList<>();
 

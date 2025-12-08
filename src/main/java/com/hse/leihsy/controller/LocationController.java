@@ -1,0 +1,52 @@
+package com.hse.leihsy.controller;
+
+import com.hse.leihsy.model.entity.Location;
+import com.hse.leihsy.repository.LocationRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(value = "/api/locations", produces = "application/json")
+@CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
+public class LocationController {
+
+    private final LocationRepository locationRepository;
+
+    /**public LocationController(LocationRepository locationRepository) {
+        this.locationRepository = locationRepository;
+    }
+     **/
+
+
+    @Operation(summary = "Get all locations", description = "Returns a list of all active locations")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Locations retrieved successfully")
+    })
+    @GetMapping
+    public ResponseEntity<List<Location>> getAllLocations() {
+        List<Location> locations = locationRepository.findAllActive();
+        return ResponseEntity.ok(locations);
+    }
+
+
+    @Operation(summary = "Get location by ID", description = "Returns a location with the specified ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Location found"),
+            @ApiResponse(responseCode = "404", description = "Location not found")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Location> getLocationById(
+            @Parameter(description = "ID of the location to retrieve") @PathVariable Long id) {
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Location nicht gefunden: " + id));
+        return ResponseEntity.ok(location);
+    }
+}

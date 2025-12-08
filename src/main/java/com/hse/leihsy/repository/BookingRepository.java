@@ -27,6 +27,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "ORDER BY b.createdAt DESC")
     List<Booking> findPendingByLenderId(@Param("lenderId") Long lenderId);
 
+    // Offene Anfragen für einen Verleiher mit optionaler Filterung nach Item
+    // (PENDING = keine proposed_pickups, optional itemId zur Eingrenzung)
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId " +
+            "AND (:itemId IS NULL OR b.item.id = :itemId) " + // Optionaler Filter
+            "AND b.proposedPickups IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt ASC") // Sortierung: Älteste zuerst (dringend!)
+    List<Booking> findPendingByLenderIdAndOptionalItem(
+            @Param("lenderId") Long lenderId,
+            @Param("itemId") Long itemId
+    );
+
+
     // Aktive Buchungen eines Items (für Verfügbarkeitsprüfung)
     @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId " +
             "AND b.returnDate IS NULL " +

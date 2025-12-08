@@ -60,8 +60,8 @@ public class BookingService {
     /**
      * Holt alle PENDING Bookings eines Verleihers als DTOs
      */
-    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId) {
-        List<Booking> bookings = bookingRepository.findPendingByLenderId(lenderId);
+    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId, Long itemId) {
+        List<Booking> bookings = bookingRepository.findPendingByLenderIdAndOptionalItem(lenderId, itemId);
         return bookingMapper.toDTOList(bookings);
     }
 
@@ -72,6 +72,8 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findOverdue(LocalDateTime.now());
         return bookingMapper.toDTOList(bookings);
     }
+
+
 
     // ========================================
     // GET METHODEN - ENTITIES (für interne Nutzung)

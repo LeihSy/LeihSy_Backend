@@ -2,6 +2,7 @@ package com.hse.leihsy.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,7 +19,8 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
+@Profile("!test")
 public class SecurityConfig {
 
     private final UserSyncFilter userSyncFilter;
@@ -35,6 +37,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Oeffentliche Endpoints
                         .requestMatchers("/", "/login", "/error").permitAll()
+
+                        // Actuator Health Endpoints (für Docker Health Checks)
+                        .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
 
                         // H2 Console (nur Development!)
                         .requestMatchers("/h2-console/**").permitAll()

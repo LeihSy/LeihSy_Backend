@@ -1,0 +1,10 @@
+services:
+  leihsy-backend:
+    image: leihsy-backend:latest
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_URL: jdbc:postgresql://193.197.231.126:5432/default_database
+      POSTGRES_USER: LeihSy
+      POSTGRES_PASSWORD: LeihSy
+    restart: unless-stopped

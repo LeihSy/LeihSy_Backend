@@ -1,0 +1,163 @@
+name: Docker Deploy to Server
+
+  # echo "Creating .env file..."
+  # cat > .env << EOF
+  # POSTGRES_DB=${POSTGRES_URL}
+  # POSTGRES_USER=${POSTGRES_USER}
+  # POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  # SPRING_PROFILES_ACTIVE=prod
+  # APP_UPLOAD_DIR=/app/uploads/images/
+  # SERVER_PORT=8080
+
+on:
+  workflow_run:
+    workflows: ["Code Coverage", "SonarQube Backend"]
+    types:
+      - completed
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  DEPLOY_PATH: /home/ubuntu/LeihSy_Deployment
+
+jobs:
+  deploy:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    # Nur deployen wenn beide Workflows erfolgreich waren oder bei direktem Push
+    if: |
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        (
+          github.event.workflow_run.name == 'SonarQube Backend' ||
+          github.event.workflow_run.name == 'Code Coverage'
+        ) &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Server via SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          ssh -p ${SSH_PORT:-22} ${SSH_USER}@${SSH_HOST} << 'ENDSSH'
+            set -e
+          
+            echo "Starting deployment..."
+          
+            # Erstelle Deploy-Verzeichnis falls nicht vorhanden
+            mkdir -p ${{ env.DEPLOY_PATH }}
+            cd ${{ env.DEPLOY_PATH }}
+          
+            echo "Cloning/Updating repository..."
+            if [ -d ".git" ]; then
+              echo "Repository exists, pulling latest changes..."
+              git fetch --all
+              git reset --hard origin/main
+              git pull origin main
+            else
+              echo "Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git .
+              git checkout main
+            fi
+          
+            echo "Building Docker image..."
+            sudo docker build -t leihsy-backend:latest .
+          
+            echo "Stopping old containers..."
+            sudo docker compose down || true
+          
+            echo "Starting containers with docker-compose..."
+            sudo docker compose up -d
+          
+            echo "Waiting for services to be healthy..."
+            sleep 10
+          
+            echo "Checking container status..."
+            sudo docker compose ps
+          
+            echo "Deployment completed successfully!"
+          
+            echo "Cleaning up old Docker images..."
+            sudo docker image prune -f
+          ENDSSH
+
+      - name: Verify Deployment
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          ssh -p ${SSH_PORT:-22} ${SSH_USER}@${SSH_HOST} << 'ENDSSH'
+            cd ${{ env.DEPLOY_PATH }}
+          
+            echo "Health Check..."
+            for i in {1..10}; do
+              if wget --spider -q http://${{ secrets.SSH_HOST}}:8080/actuator/health; then
+                echo "Backend is healthy!"
+                sudo docker compose logs --tail=50 backend
+                exit 0
+              fi
+              echo "Attempt $i/10: Waiting for backend to be ready..."
+              sleep 5
+            done
+          
+            echo "Backend health check failed!"
+            sudo docker compose logs backend
+            exit 1
+          ENDSSH
+
+      - name: Rollback on Failure
+        if: failure()
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          echo "Deployment failed, attempting rollback..."
+          ssh -p ${SSH_PORT:-22} ${SSH_USER}@${SSH_HOST} << 'ENDSSH'
+            cd ${{ env.DEPLOY_PATH }}
+          
+            echo "Rolling back to previous version..."
+            git checkout HEAD~1
+            sudo docker compose down
+            sudo docker build -t leihsy-backend:latest .
+            sudo docker compose up -d
+          
+            echo "Rollback completed. Check logs:"
+            sudo docker compose logs --tail=100
+          ENDSSH
+
+      - name: Send Deployment Notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "##Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Server:** ${{ secrets.SSH_HOST }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Application URL:** http://${{ secrets.SSH_HOST }}:8080" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "##Deployment Failed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          fi
+

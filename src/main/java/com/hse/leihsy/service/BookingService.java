@@ -34,6 +34,14 @@ public class BookingService {
     // ========================================
 
     /**
+     * Holt alle Bookings als DTOs (Admin-Funktion)
+     */
+    public List<BookingDTO> getAllBookings() {
+        List<Booking> bookings = bookingRepository.findAll();
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
      * Holt eine Booking als DTO anhand der ID
      */
     public BookingDTO getBookingDTOById(Long id) {

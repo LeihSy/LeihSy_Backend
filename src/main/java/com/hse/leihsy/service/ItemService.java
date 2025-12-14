@@ -8,6 +8,7 @@ import com.hse.leihsy.repository.ProductRepository;
 import com.hse.leihsy.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -57,7 +58,7 @@ public class ItemService {
                     .orElseThrow(() -> new RuntimeException("Verleiher nicht gefunden: " + lenderId));
         }
 
-        Item item = Item.Builder()
+        Item item = Item.builder()
                 .invNumber(invNumber)
                 .owner(owner)
                 .lender(lender)

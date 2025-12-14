@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
 
+
 /**
  * Item Entity - Physisches Exemplar eines Products.
  * Beispiel: Meta Quest 3 mit Inventarnummer VR-001
@@ -58,6 +59,7 @@ public class Item extends BaseEntity {
     /**
      * Buchungen für dieses Item
      */
+    @Builder.Default
     @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     private List<Booking> bookings = new ArrayList<>();
 
@@ -94,3 +96,4 @@ public class Item extends BaseEntity {
                     return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
                 });
     }
+}

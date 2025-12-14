@@ -19,15 +19,11 @@ import java.util.List;
 @RestController
 @RequestMapping(value = "/api/items", produces = "application/json")
 @CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
 public class ItemController {
 
     private final ItemService itemService;
     private final ItemMapper itemMapper;
-
-    public ItemController(ItemService itemService, ItemMapper itemMapper) {
-        this.itemService = itemService;
-        this.itemMapper = itemMapper;
-    }
 
     @Operation(summary = "Get all items", description = "Returns a list of all items")
     @ApiResponses({

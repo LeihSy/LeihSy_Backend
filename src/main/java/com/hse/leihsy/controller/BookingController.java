@@ -145,6 +145,34 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @Operation(summary = "Bestätigte Ausleihen (Zukünftig)",
+            description = "Zeigt alle Buchungen, die bestätigt wurden, aber noch nicht abgeholt sind.")
+    @GetMapping("/lenders/me/upcoming")
+    public ResponseEntity<List<BookingDTO>> getMyUpcomingLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getUpcomingBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Aktuelle Ausleihen (Aktiv)",
+            description = "Zeigt alle Gegenstände, die aktuell ausgeliehen sind. Sortiert nach Rückgabedatum.")
+    @GetMapping("/lenders/me/active")
+    public ResponseEntity<List<BookingDTO>> getMyActiveLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getActiveBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Überfällige Ausleihen (Lender)",
+            description = "Zeigt nur die Ausleihen, deren Rückgabedatum überschritten ist.")
+    @GetMapping("/lenders/me/overdue")
+    public ResponseEntity<List<BookingDTO>> getMyOverdueLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getOverdueBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+
     // ========================================
     // POST ENDPOINT - Buchung erstellen
     // ========================================

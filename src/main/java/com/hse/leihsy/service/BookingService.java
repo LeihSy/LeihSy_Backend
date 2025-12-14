@@ -73,6 +73,30 @@ public class BookingService {
         return bookingMapper.toDTOList(bookings);
     }
 
+    /**
+     * Holt bestätigte, aber noch nicht abgeholte Buchungen (Zukünftig)
+     */
+    public List<BookingDTO> getUpcomingBookingsByLenderId(Long lenderId) {
+        List<Booking> bookings = bookingRepository.findUpcomingByLenderId(lenderId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt aktuell ausgeliehene Gegenstände (Aktiv)
+     * Sortiert nach Rückgabedatum, damit überfällige oben stehen.
+     */
+    public List<BookingDTO> getActiveBookingsByLenderId(Long lenderId) {
+        List<Booking> bookings = bookingRepository.findActiveByLenderId(lenderId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt nur die überfälligen Buchungen für einen Verleiher
+     */
+    public List<BookingDTO> getOverdueBookingsByLenderId(Long lenderId) {
+        List<Booking> bookings = bookingRepository.findOverdueByLenderId(lenderId, LocalDateTime.now());
+        return bookingMapper.toDTOList(bookings);
+    }
 
 
     // ========================================
@@ -127,6 +151,7 @@ public class BookingService {
         booking.setEndDate(endDate);
         booking.setMessage(message);
 
+        booking.setStatus(BookingStatus.PENDING.name());
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);  // ← DTO zurückgeben!
     }

@@ -36,4 +36,5 @@ public class BookingDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean urgent; // für Dringlichkeit (nahe der 24h Frist)
+    private boolean overdue; // Abgeholt – Rückgabedatum überschritten
 }

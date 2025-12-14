@@ -14,19 +14,12 @@ import java.util.List;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ItemService {
 
     private final ItemRepository itemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-
-    public ItemService(ItemRepository itemRepository,
-                       ProductRepository productRepository,
-                       UserRepository userRepository) {
-        this.itemRepository = itemRepository;
-        this.productRepository = productRepository;
-        this.userRepository = userRepository;
-    }
 
     public List<Item> getAllItems() {
         return itemRepository.findAllActive();
@@ -64,7 +57,12 @@ public class ItemService {
                     .orElseThrow(() -> new RuntimeException("Verleiher nicht gefunden: " + lenderId));
         }
 
-        Item item = new Item(invNumber, owner, lender, product);
+        Item item = Item.Builder()
+                .invNumber(invNumber)
+                .owner(owner)
+                .lender(lender)
+                .product(product)
+                .build();
         return itemRepository.save(item);
     }
 
@@ -86,7 +84,12 @@ public class ItemService {
                 continue;
             }
 
-            Item item = new Item(invNumber, owner, lender, product);
+            Item item = Item.builder()
+                    .invNumber(invNumber)
+                    .owner(owner)
+                    .lender(lender)
+                    .product(product)
+                    .build();
             items.add(itemRepository.save(item));
         }
         return items;

@@ -133,21 +133,9 @@ public class BookingService {
      * Prüft ob ein Item im gewünschten Zeitraum verfügbar ist
      */
     private boolean checkAvailability(Long itemId, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Booking> conflictingBookings = bookingRepository.findAll().stream()
-                .filter(booking -> booking.getItem().getId().equals(itemId))
-                .filter(booking -> booking.getDeletedAt() == null)
-                .filter(booking -> {
-                    BookingStatus status = booking.calculateStatus();
-                    return status == BookingStatus.PENDING
-                            || status == BookingStatus.CONFIRMED
-                            || status == BookingStatus.PICKED_UP;
-                })
-                .filter(booking -> {
-                    return !(endDate.isBefore(booking.getStartDate())
-                            || startDate.isAfter(booking.getEndDate()));
-                })
-                .toList();
-
+        List<Booking> conflictingBookings = bookingRepository.findOverlappingBookings(
+                itemId, startDate, endDate
+        );
         return conflictingBookings.isEmpty();
     }
 

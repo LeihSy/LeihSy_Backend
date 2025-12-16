@@ -32,6 +32,27 @@ public class BookingController {
     // GET ENDPOINTS
     // ========================================
 
+    @Operation(
+            summary = "Alle Buchungen abrufen mit optionalen Filtern",
+            description = "Holt alle Buchungen. Optionaler Status-Filter: overdue, pending, confirmed, picked_up, returned"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
+            @ApiResponse(responseCode = "400", description = "Ungültiger Status-Parameter"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
+    @GetMapping
+    public ResponseEntity<List<BookingDTO>> getAllBookings(
+            @Parameter(
+                    description = "Optional: Filter by status (overdue, pending, confirmed, picked_up, returned)",
+                    example = "overdue"
+            )
+            @RequestParam(required = false) String status
+    ) {
+        List<BookingDTO> bookings = bookingService.getAllBookings(status);
+        return ResponseEntity.ok(bookings);
+    }
+
     @Operation(summary = "Einzelne Buchung abrufen",
             description = "Holt eine spezifische Buchung anhand ihrer ID")
     @ApiResponses(value = {
@@ -44,18 +65,6 @@ public class BookingController {
             @Parameter(description = "ID der Buchung") @PathVariable Long id) {
         BookingDTO booking = bookingService.getBookingDTOById(id);
         return ResponseEntity.ok(booking);
-    }
-
-    @Operation(summary = "Überfällige Buchungen abrufen",
-            description = "Holt alle Buchungen bei denen die Rückgabe überfällig ist")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
-    })
-    @GetMapping("/overdue")
-    public ResponseEntity<List<BookingDTO>> getOverdueBookings() {
-        List<BookingDTO> bookings = bookingService.getOverdueBookings();
-        return ResponseEntity.ok(bookings);
     }
 
     // ========================================

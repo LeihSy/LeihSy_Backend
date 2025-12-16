@@ -103,6 +103,40 @@ public class BookingService {
         return bookingMapper.toDTOList(bookings);
     }
 
+    /**
+     * Holt alle Bookings mit optionalem Status-Filter
+     * Nutzt optimierte Repository-Queries statt Stream-Filterung
+     *
+     * @param status Optional: "overdue", "pending", "confirmed", "picked_up", "returned", "cancelled", "expired", "rejected"
+     * @return Liste von BookingDTOs
+     */
+    public List<BookingDTO> getAllBookings(String status) {
+        List<Booking> bookings;
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold24h = now.minusHours(24);
+
+        if (status == null || status.isBlank()) {
+            // Alle Bookings (ohne gelöschte)
+            bookings = bookingRepository.findAllActive();
+        } else {
+            // Nach Status filtern mit spezifischen Queries
+            bookings = switch (status.toLowerCase()) {
+                case "overdue" -> bookingRepository.findOverdue(now);
+                case "pending" -> bookingRepository.findAllPending(threshold24h);
+                case "confirmed" -> bookingRepository.findAllConfirmed(threshold24h);
+                case "picked_up" -> bookingRepository.findAllPickedUp();
+                case "returned" -> bookingRepository.findAllReturned();
+                case "cancelled" -> bookingRepository.findAllCancelled(threshold24h);
+                case "expired" -> bookingRepository.findAllExpired(threshold24h);
+                case "rejected" -> bookingRepository.findAllRejected();
+                default -> throw new IllegalArgumentException("Invalid status: " + status +
+                        ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected");
+            };
+        }
+
+        return bookingMapper.toDTOList(bookings);
+    }
+
     // ========================================
     // GET METHODEN - ENTITIES (für interne Nutzung)
     // ========================================

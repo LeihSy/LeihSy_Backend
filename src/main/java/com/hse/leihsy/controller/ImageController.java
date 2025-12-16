@@ -61,7 +61,7 @@ public class ImageController {
                     )
             )
     })
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadImage(
             @Parameter(
                     description = "Image file to upload (JPG, PNG, or WebP, max 5MB)",

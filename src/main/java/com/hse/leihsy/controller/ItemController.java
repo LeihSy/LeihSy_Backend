@@ -58,7 +58,7 @@ public class ItemController {
     @GetMapping("/products/{productId}")
     public ResponseEntity<List<ItemDTO>> getItemsByProduct(
             @Parameter(description = "ID of the product") @PathVariable Long productId) {
-        List<Item> items = itemService.getItemsByProduct(productId);
+        List<Item> items = itemService.getItemsByProductId(productId);
         return ResponseEntity.ok(itemMapper.toDTOList(items));
     }
 

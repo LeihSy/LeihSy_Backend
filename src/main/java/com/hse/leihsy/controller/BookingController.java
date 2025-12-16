@@ -32,46 +32,6 @@ public class BookingController {
     // GET ENDPOINTS
     // ========================================
 
-    @Operation(summary = "Eigene PENDING Anfragen als Verleiher abrufen",
-            description = "Holt alle offenen Buchungsanfragen für den eingeloggten Verleiher")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen",
-                    content = @Content(schema = @Schema(implementation = BookingDTO.class))),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
-    })
-    @GetMapping("/lenders/me/pending")
-    public ResponseEntity<List<BookingDTO>> getPendingBookingsForCurrentLender() {
-        User currentUser = userService.getCurrentUser();
-        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(currentUser.getId());
-        return ResponseEntity.ok(bookings);
-    }
-
-    @Operation(summary = "Alle eigenen Buchungen als Verleiher abrufen",
-            description = "Holt alle Buchungen für die der eingeloggte User Verleiher ist")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
-    })
-    @GetMapping("/lenders/me")
-    public ResponseEntity<List<BookingDTO>> getMyLenderBookings() {
-        User currentUser = userService.getCurrentUser();
-        List<BookingDTO> bookings = bookingService.getBookingsByLenderId(currentUser.getId());
-        return ResponseEntity.ok(bookings);
-    }
-
-    @Operation(summary = "Eigene Buchungen als Student abrufen",
-            description = "Holt alle Buchungen die der eingeloggte User als Student/Entleiher erstellt hat")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
-    })
-    @GetMapping("/users/me")
-    public ResponseEntity<List<BookingDTO>> getMyBookings() {
-        User currentUser = userService.getCurrentUser();
-        List<BookingDTO> bookings = bookingService.getBookingsByUserId(currentUser.getId());
-        return ResponseEntity.ok(bookings);
-    }
-
     @Operation(summary = "Einzelne Buchung abrufen",
             description = "Holt eine spezifische Buchung anhand ihrer ID")
     @ApiResponses(value = {
@@ -95,48 +55,6 @@ public class BookingController {
     @GetMapping("/overdue")
     public ResponseEntity<List<BookingDTO>> getOverdueBookings() {
         List<BookingDTO> bookings = bookingService.getOverdueBookings();
-        return ResponseEntity.ok(bookings);
-    }
-
-    @Operation(summary = "Buchungen eines bestimmten Users abrufen",
-            description = "Holt alle Buchungen eines spezifischen Users (Admin-Funktion)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
-    })
-    @GetMapping("/users/{userId}")
-    public ResponseEntity<List<BookingDTO>> getBookingsByUserId(
-            @Parameter(description = "ID des Users") @PathVariable Long userId) {
-        List<BookingDTO> bookings = bookingService.getBookingsByUserId(userId);
-        return ResponseEntity.ok(bookings);
-    }
-
-    @Operation(summary = "Buchungen eines bestimmten Verleihers abrufen",
-            description = "Holt alle Buchungen eines spezifischen Verleihers (Admin-Funktion)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
-    })
-    @GetMapping("/lenders/{lenderId}")
-    public ResponseEntity<List<BookingDTO>> getBookingsByLenderId(
-            @Parameter(description = "ID des Verleihers") @PathVariable Long lenderId) {
-        List<BookingDTO> bookings = bookingService.getBookingsByLenderId(lenderId);
-        return ResponseEntity.ok(bookings);
-    }
-
-    @Operation(summary = "PENDING Buchungen eines bestimmten Verleihers abrufen",
-            description = "Holt alle offenen Anfragen eines spezifischen Verleihers (Admin-Funktion)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
-    })
-    @GetMapping("/lenders/{lenderId}/pending")
-    public ResponseEntity<List<BookingDTO>> getPendingBookingsByLenderId(
-            @Parameter(description = "ID des Verleihers") @PathVariable Long lenderId) {
-        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(lenderId);
         return ResponseEntity.ok(bookings);
     }
 

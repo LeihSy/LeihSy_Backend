@@ -50,18 +50,48 @@ public class BookingService {
     }
 
     /**
+     * Holt alle Bookings eines Users als DTOs (als Student/Entleiher)
+     */
+    public List<BookingDTO> getBookingsByUserId(Long userId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findAll().stream()
+                    .filter(b -> b.getUser() != null && b.getUser().getId().equals(userId))
+                    .toList();
+        } else {
+            bookings = bookingRepository.findByUserId(userId);
+        }
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
      * Holt alle Bookings eines Verleihers als DTOs
      */
-    public List<BookingDTO> getBookingsByLenderId(Long lenderId) {
-        List<Booking> bookings = bookingRepository.findByLenderId(lenderId);
+    public List<BookingDTO> getBookingsByLenderId(Long lenderId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findAll().stream()
+                    .filter(b -> b.getLender() != null && b.getLender().getId().equals(lenderId))
+                    .toList();
+        } else {
+            bookings = bookingRepository.findByLenderId(lenderId);
+        }
         return bookingMapper.toDTOList(bookings);
     }
 
     /**
      * Holt alle PENDING Bookings eines Verleihers als DTOs
      */
-    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId) {
-        List<Booking> bookings = bookingRepository.findPendingByLenderId(lenderId);
+    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findAll().stream()
+                    .filter(b -> b.getLender() != null && b.getLender().getId().equals(lenderId))
+                    .filter(b -> b.calculateStatus() == BookingStatus.PENDING)
+                    .toList();
+        } else {
+            bookings = bookingRepository.findPendingByLenderId(lenderId);
+        }
         return bookingMapper.toDTOList(bookings);
     }
 

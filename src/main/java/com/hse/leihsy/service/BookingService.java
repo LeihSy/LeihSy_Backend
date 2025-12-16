@@ -15,6 +15,8 @@ import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.hse.leihsy.model.dto.BookingStatusUpdateDTO;
+import com.hse.leihsy.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +30,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final BookingMapper bookingMapper;
+    private final UserService userService;
 
     // ========================================
     // GET METHODEN - MIT DTOs
@@ -329,6 +332,51 @@ public class BookingService {
         booking.setReturnDate(LocalDateTime.now());
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);
+    }
+
+    /**
+     * Generische Methode für alle Status-Updates via PATCH-Endpoint
+     *
+     * @param id Booking ID
+     * @param updateDTO DTO mit action und optionalen Parametern
+     * @return Aktualisierte Booking als DTO
+     */
+    @Transactional
+    public BookingDTO updateStatus(Long id, BookingStatusUpdateDTO updateDTO) {
+        String action = updateDTO.getAction();
+
+        if (action == null || action.isBlank()) {
+            throw new IllegalArgumentException("Action is required");
+        }
+
+        User currentUser = userService.getCurrentUser();
+
+        return switch (action.toLowerCase()) {
+            case "confirm" -> {
+                if (updateDTO.getProposedPickups() == null || updateDTO.getProposedPickups().isEmpty()) {
+                    throw new IllegalArgumentException("proposedPickups is required for action 'confirm'");
+                }
+                yield confirmBooking(id, updateDTO.getProposedPickups());
+            }
+            case "select_pickup" -> {
+                if (updateDTO.getSelectedPickup() == null) {
+                    throw new IllegalArgumentException("selectedPickup is required for action 'select_pickup'");
+                }
+                yield selectPickupTime(id, updateDTO.getSelectedPickup());
+            }
+            case "propose" -> {
+                if (updateDTO.getProposedPickups() == null || updateDTO.getProposedPickups().isEmpty()) {
+                    throw new IllegalArgumentException("proposedPickups is required for action 'propose'");
+                }
+                yield proposeNewPickups(id, currentUser.getId(), updateDTO.getProposedPickups());
+            }
+            case "pickup" -> recordPickup(id);
+            case "return" -> recordReturn(id);
+            default -> throw new IllegalArgumentException(
+                    "Invalid action: " + action +
+                            ". Valid values: confirm, select_pickup, propose, pickup, return"
+            );
+        };
     }
 
     /**

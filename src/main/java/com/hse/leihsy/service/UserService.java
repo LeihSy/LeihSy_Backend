@@ -70,81 +70,51 @@ public class UserService {
      * Holt den aktuell eingeloggten User aus dem JWT Token
      * @return Current User
      */
-//    public User getCurrentUser() {
-//        // 1. Authentication aus SecurityContext holen
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            throw new RuntimeException("Access Denied: No authentication found");
-//        }
-//
-//        // 2. JWT Token extrahieren
-//        if (!(authentication.getPrincipal() instanceof Jwt)) {
-//            throw new RuntimeException("Access Denied: Invalid authentication type");
-//        }
-//
-//        Jwt jwt = (Jwt) authentication.getPrincipal();
-//
-//        // 3. Keycloak UUID aus Token holen
-//        String keycloakId = jwt.getSubject();
-//
-//        // 4. User aus DB holen (oder automatisch anlegen)
-//        User user = userRepository.findByUniqueId(keycloakId)
-//                .orElseGet(() -> {
-//                    // User existiert noch nicht → automatisch anlegen!
-//                    String name = jwt.getClaim("preferred_username");
-//                    String email = jwt.getClaim("email");
-//
-//                    return createUser(keycloakId, name, email);
-//                });
-//        return user;
-//    }
-
     public User getCurrentUser() {
         System.out.println("--- UserService.getCurrentUser() START ---");
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println("🔍 Authentication: " + authentication);
+            System.out.println("Authentication: " + authentication);
 
             if (authentication == null) {
-                System.err.println("❌ Authentication is NULL!");
+                System.err.println("Authentication is NULL!");
                 throw new RuntimeException("Access Denied: No authentication found");
             }
 
-            System.out.println("✅ Authentication found: " + authentication.getClass().getName());
-            System.out.println("✅ Principal type: " + authentication.getPrincipal().getClass().getName());
+            System.out.println("Authentication found: " + authentication.getClass().getName());
+            System.out.println("Principal type: " + authentication.getPrincipal().getClass().getName());
 
             if (!authentication.isAuthenticated()) {
-                System.err.println("❌ User is not authenticated!");
+                System.err.println("User is not authenticated!");
                 throw new RuntimeException("Access Denied: User not authenticated");
             }
 
             if (!(authentication.getPrincipal() instanceof Jwt)) {
-                System.err.println("❌ Principal is not a JWT! Type: " + authentication.getPrincipal().getClass().getName());
+                System.err.println("Principal is not a JWT! Type: " + authentication.getPrincipal().getClass().getName());
                 throw new RuntimeException("Access Denied: Invalid authentication type");
             }
 
             Jwt jwt = (Jwt) authentication.getPrincipal();
             String keycloakId = jwt.getSubject();
 
-            System.out.println("✅ Keycloak ID from token: " + keycloakId);
+            System.out.println("Keycloak ID from token: " + keycloakId);
 
             User user = userRepository.findByUniqueId(keycloakId)
                     .orElseGet(() -> {
-                        System.out.println("⚠️ User not found in DB, creating new user...");
+                        System.out.println("User not found in DB, creating new user...");
                         String name = jwt.getClaim("preferred_username");
                         String email = jwt.getClaim("email");
                         return createUser(keycloakId, name, email);
                     });
 
-            System.out.println("✅ Found/Created User: ID=" + user.getId() + ", Name=" + user.getName());
+            System.out.println("Found/Created User: ID=" + user.getId() + ", Name=" + user.getName());
             System.out.println("--- UserService.getCurrentUser() END ---");
 
             return user;
 
         } catch (Exception e) {
-            System.err.println("❌ Exception in getCurrentUser(): " + e.getMessage());
+            System.err.println("Exception in getCurrentUser(): " + e.getMessage());
             throw e;
         }
     }

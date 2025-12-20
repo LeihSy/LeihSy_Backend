@@ -61,6 +61,13 @@ public class Product extends BaseEntity {
     @Column(name = "accessories", columnDefinition = "TEXT")
     private String accessories;
 
+    /**
+     * Gibt an ob das Produkt aktiv ist und ausgeliehen werden kann.
+     * Inaktive Produkte werden ausgegraut in der Suche angezeigt.
+     */
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
     // Relationships
 
     /**
@@ -208,5 +215,13 @@ public class Product extends BaseEntity {
 
     public void setRecommendedSets(List<ProductSet> recommendedSets) {
         this.recommendedSets = recommendedSets;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

@@ -1,100 +1,51 @@
 package com.hse.leihsy.model.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+/**
+ * DTO für Item-Responses in der API.
+ * Enthält alle relevanten Informationen eines physischen Exemplars.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Response DTO for a physical item (exemplar)")
 public class ItemDTO {
 
+    @Schema(description = "Unique identifier", example = "1")
     private Long id;
+
+    @Schema(description = "Inventory number", example = "VR-001")
     private String invNumber;
+
+    @Schema(description = "Owner of the item", example = "Christian Haas")
     private String owner;
+
+    @Schema(description = "ID of the assigned lender", example = "7")
     private Long lenderId;
+
+    @Schema(description = "Name of the assigned lender", example = "Max Mustermann")
     private String lenderName;
+
+    @Schema(description = "ID of the product this item belongs to", example = "5")
     private Long productId;
+
+    @Schema(description = "Name of the product", example = "Meta Quest 3")
     private String productName;
-    private boolean available;
+
+    @Schema(description = "Indicates if the item is currently available for booking")
+    private Boolean isAvailable;
+
+    @Schema(description = "Timestamp when the item was created")
     private LocalDateTime createdAt;
+
+    @Schema(description = "Timestamp when the item was last updated")
     private LocalDateTime updatedAt;
-
-    public ItemDTO() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getInvNumber() {
-        return invNumber;
-    }
-
-    public void setInvNumber(String invNumber) {
-        this.invNumber = invNumber;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public Long getLenderId() {
-        return lenderId;
-    }
-
-    public void setLenderId(Long lenderId) {
-        this.lenderId = lenderId;
-    }
-
-    public String getLenderName() {
-        return lenderName;
-    }
-
-    public void setLenderName(String lenderName) {
-        this.lenderName = lenderName;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public boolean isAvailable() {
-        return available;
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }

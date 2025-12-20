@@ -21,6 +21,7 @@ public interface BookingMapper {
     @Mapping(target = "productName", source = "item.product.name")
     @Mapping(target = "proposalById", source = "proposalBy.id")
     @Mapping(target = "proposalByName", source = "proposalBy.name")
+    @Mapping(target = "status", expression = "java(booking.calculateStatus().name())")
     BookingDTO toDTO(Booking booking);
 
     List<BookingDTO> toDTOList(List<Booking> bookings);

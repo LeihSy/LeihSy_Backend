@@ -51,29 +51,6 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
-    @Operation(summary = "Get items by product", description = "Returns a list of items filtered by product ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
-    })
-    @GetMapping("/products/{productId}")
-    public ResponseEntity<List<ItemDTO>> getItemsByProduct(
-            @Parameter(description = "ID of the product") @PathVariable Long productId) {
-        List<Item> items = itemService.getItemsByProductId(productId);
-        return ResponseEntity.ok(itemMapper.toDTOList(items));
-    }
-
-    @Operation(summary = "Get item by inventory number", description = "Returns an item by its inventory number")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Item found"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
-    @GetMapping("/invnumber/{invNumber}")
-    public ResponseEntity<ItemDTO> getItemByInvNumber(
-            @Parameter(description = "Inventory number of the item") @PathVariable String invNumber) {
-        Item item = itemService.getItemByInvNumber(invNumber);
-        return ResponseEntity.ok(itemMapper.toDTO(item));
-    }
-
     @Operation(summary = "Create a new item", description = "Creates a new item with the given data")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Item created successfully"),

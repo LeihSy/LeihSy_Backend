@@ -1,0 +1,490 @@
+{
+  "info": {
+    "_postman_id": "db7ee301-851c-454a-9e4a-c155edb0438c",
+    "name": "LeihSy Copy",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Products",
+      "id": "10eb7e8c-d248-41e5-ac91-d4f5ae07cb75",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/products",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "products"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Pending Bookings",
+      "id": "57d6537e-d3cf-4595-a2f7-0da6b627b13d",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/lenders/me/pending",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "lenders",
+            "me",
+            "pending"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Booking",
+      "id": "55ad0bc7-72f6-4423-86e0-fb1121c02d85",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"itemId\": 1,\r\n  \"startDate\": \"2026-03-01T09:00:00\",\r\n  \"endDate\": \"2026-03-05T17:00:00\",\r\n  \"message\": \"Fresh booking after SQL update\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/bookings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Booking Student",
+      "id": "38b47e8e-5414-4df1-aa60-5f3259b2d682",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/users/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "users",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Booking Lender",
+      "id": "ad91e043-d3e3-4d20-8d31-fd2bba2f06f1",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/lenders/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "lenders",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Accept Booking ID=1",
+      "id": "a1482469-1656-4887-9c5e-d22e4c470750",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"proposedPickups\": [\r\n    \"2026-03-01T09:00:00\"\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/bookings/10/confirm",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "10",
+            "confirm"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Select Date as Student",
+      "id": "e4d83675-2626-4116-932c-e1e65dbc5dc9",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"selectedPickup\": \"2026-03-01T09:00:00\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/bookings/10/select-pickup",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "10",
+            "select-pickup"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Lender documents Distribution",
+      "id": "488ea7ff-1590-4c58-a9ad-52eaa8afbff5",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/1/pickup",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "1",
+            "pickup"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Lender documents Return",
+      "id": "66b42d4e-c9c6-4d60-8f78-4069d75a490d",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/1/return",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "1",
+            "return"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Lender denies Booking",
+      "id": "fbca8145-8982-426f-b584-cc3c7d7b09a2",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/1/reject",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "1",
+            "reject"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Booking",
+      "id": "6a027227-93b6-45df-a986-ae1f48bee98c",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/5",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Post New Product",
+      "id": "fdbf72a8-6fd9-45dd-a77a-433ff0d0db3d",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "product",
+              "value": "    {\n        \"name\": \"test\",\n        \"description\": \"test\",\n        \"expiryDate\": 10,\n        \"price\": 8.00,\n        \"accessories\": \"test\",\n        \"categoryId\": 1,\n        \"locationId\": 3\n    }",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/products",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "products"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Product",
+      "id": "b5504bd0-ece3-48aa-91b0-58437811da52",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/products/17",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "products",
+            "17"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Lender Upcoming Pickups",
+      "id": "30970708-ac53-4e8b-8436-99864ba87f1b",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/lenders/me/upcoming",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "lenders",
+            "me",
+            "upcoming"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Lender Active Rentals",
+      "id": "3557d8af-1cd8-4429-abf0-97a0fc7a58c2",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/lenders/me/active",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "lenders",
+            "me",
+            "active"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Lender Overdue Rentals",
+      "id": "065983e4-6bd0-49aa-a08d-62b892bf7719",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/bookings/lenders/me/overdue",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "bookings",
+            "lenders",
+            "me",
+            "overdue"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "1345c709-8b0d-47c1-a24c-3a852c9225a4",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "// Token nur holen wenn abgelaufen oder nicht vorhanden\r",
+          "const tokenExpiry = pm.collectionVariables.get(\"token_expiry\");\r",
+          "const now = Date.now();\r",
+          "\r",
+          "if (!tokenExpiry || now >= tokenExpiry) {\r",
+          "    console.log(\"Token abgelaufen, hole neuen Token...\");\r",
+          "    \r",
+          "    const keycloakUrl = pm.collectionVariables.get(\"keycloak_url\");\r",
+          "    const clientId = pm.collectionVariables.get(\"client_id\");\r",
+          "    const username = pm.collectionVariables.get(\"username\");\r",
+          "    const password = pm.collectionVariables.get(\"password\");\r",
+          "    \r",
+          "    pm.sendRequest({\r",
+          "        url: keycloakUrl + '/realms/insy/protocol/openid-connect/token',\r",
+          "        method: 'POST',\r",
+          "        header: {\r",
+          "            'Content-Type': 'application/x-www-form-urlencoded'\r",
+          "        },\r",
+          "        body: {\r",
+          "            mode: 'urlencoded',\r",
+          "            urlencoded: [\r",
+          "                { key: 'grant_type', value: 'password' },\r",
+          "                { key: 'client_id', value: clientId },\r",
+          "                { key: 'username', value: username },\r",
+          "                { key: 'password', value: password }\r",
+          "            ]\r",
+          "        }\r",
+          "    }, function (err, response) {\r",
+          "        if (err) {\r",
+          "            console.error(\"❌ Token-Fehler:\", err);\r",
+          "        } else {\r",
+          "            const jsonData = response.json();\r",
+          "            \r",
+          "            if (jsonData.access_token) {\r",
+          "                const token = jsonData.access_token;\r",
+          "                const expiresIn = jsonData.expires_in * 1000; // Millisekunden\r",
+          "                \r",
+          "                pm.collectionVariables.set(\"access_token\", token);\r",
+          "                pm.collectionVariables.set(\"token_expiry\", Date.now() + expiresIn);\r",
+          "                \r",
+          "                console.log(\"Token erfolgreich geholt!\");\r",
+          "                console.log(\"Läuft ab in:\", Math.floor(expiresIn / 1000 / 60), \"Minuten\");\r",
+          "            } else {\r",
+          "                console.error(\"❌ Kein Token in Response:\", jsonData);\r",
+          "            }\r",
+          "        }\r",
+          "    });\r",
+          "} else {\r",
+          "    const remainingTime = Math.floor((tokenExpiry - now) / 1000 / 60);\r",
+          "    console.log(\"✅ Token noch gültig für:\", remainingTime, \"Minuten\");\r",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "b9afa644-1c48-4dee-9914-d3d7513cd3aa",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "ce51d42f-9e36-4a59-8515-5e45908df0e0",
+      "key": "base_url",
+      "value": ""
+    },
+    {
+      "id": "35f2ca11-d203-4490-8d0c-f016a3b54309",
+      "key": "keycloak_url",
+      "value": ""
+    },
+    {
+      "id": "49bf78bb-550c-4b15-bd9b-6cae2cf7d78a",
+      "key": "client_id",
+      "value": ""
+    },
+    {
+      "id": "8bd698fa-6540-4474-8a61-4b5768697342",
+      "key": "username",
+      "value": ""
+    },
+    {
+      "id": "a3abaa25-f0d1-462b-9d8c-2382e0053c0e",
+      "key": "password",
+      "value": ""
+    },
+    {
+      "id": "40d9d580-b8fd-41db-a2cf-5fa2c8872b8a",
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "id": "13c3bba5-7690-4550-a65b-063d69e7bb1b",
+      "key": "token_expiry",
+      "value": ""
+    }
+  ]
+}

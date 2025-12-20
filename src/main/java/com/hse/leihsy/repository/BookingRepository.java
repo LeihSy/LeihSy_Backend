@@ -27,6 +27,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "ORDER BY b.createdAt DESC")
     List<Booking> findPendingByLenderId(@Param("lenderId") Long lenderId);
 
+    // Offene Anfragen für einen Verleiher mit optionaler Filterung nach Item
+    // (PENDING = keine proposed_pickups, optional itemId zur Eingrenzung)
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId " +
+            "AND (:itemId IS NULL OR b.item.id = :itemId) " + // Optionaler Filter
+            "AND b.proposedPickups IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt ASC") // Sortierung: Älteste zuerst (dringend!)
+    List<Booking> findPendingByLenderIdAndOptionalItem(
+            @Param("lenderId") Long lenderId,
+            @Param("itemId") Long itemId
+    );
+
+
     // Aktive Buchungen eines Items (für Verfügbarkeitsprüfung)
     @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId " +
             "AND b.returnDate IS NULL " +
@@ -70,4 +83,37 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "AND b.distributionDate IS NULL " +
             "AND b.deletedAt IS NULL")
     List<Booking> findConfirmedNotPickedUpOlderThan(@Param("threshold") LocalDateTime threshold);
+
+
+    // Bevorstehende Buchungen eines Verleihers
+    // (CONFIRMED = Abholung bestätigt, aber noch nicht abgeholt)
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId " +
+            "AND b.confirmedPickup IS NOT NULL " +
+            "AND b.distributionDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.confirmedPickup ASC") // Sortierung: Nächste Abholung zuerst
+    List<Booking> findUpcomingByLenderId(@Param("lenderId") Long lenderId);
+
+    // Aktive Buchungen eines Verleihers
+    // (Bereits abgeholt, aber noch nicht zurückgegeben)
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId " +
+            "AND b.distributionDate IS NOT NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.endDate ASC") // Sortierung: Nächstes Rückgabedatum zuerst
+    List<Booking> findActiveByLenderId(@Param("lenderId") Long lenderId);
+
+    // Überfällige Buchungen eines Verleihers
+    // (Subset der aktiven Buchungen mit überschrittenem Enddatum)
+    @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId " +
+            "AND b.distributionDate IS NOT NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.endDate < :now " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.endDate ASC")
+    List<Booking> findOverdueByLenderId(
+            @Param("lenderId") Long lenderId,
+            @Param("now") LocalDateTime now
+    );
+
 }

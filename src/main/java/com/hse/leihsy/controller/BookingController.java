@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,9 +42,12 @@ public class BookingController {
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
     @GetMapping("/lenders/me/pending")
-    public ResponseEntity<List<BookingDTO>> getPendingBookingsForCurrentLender() {
+    public ResponseEntity<List<BookingDTO>> getPendingBookingsForCurrentLender(
+            @Parameter(description = "Optional: Filter nach Gegenstand-ID")
+            @RequestParam(required = false) Long itemId
+    ) {
         User currentUser = userService.getCurrentUser();
-        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(currentUser.getId());
+        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(currentUser.getId(), itemId);
         return ResponseEntity.ok(bookings);
     }
 
@@ -136,9 +141,37 @@ public class BookingController {
     @GetMapping("/lenders/{lenderId}/pending")
     public ResponseEntity<List<BookingDTO>> getPendingBookingsByLenderId(
             @Parameter(description = "ID des Verleihers") @PathVariable Long lenderId) {
-        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(lenderId);
+        List<BookingDTO> bookings = bookingService.getPendingBookingsByLenderId(lenderId, null);
         return ResponseEntity.ok(bookings);
     }
+
+    @Operation(summary = "Bestätigte Ausleihen (Zukünftig)",
+            description = "Zeigt alle Buchungen, die bestätigt wurden, aber noch nicht abgeholt sind.")
+    @GetMapping("/lenders/me/upcoming")
+    public ResponseEntity<List<BookingDTO>> getMyUpcomingLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getUpcomingBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Aktuelle Ausleihen (Aktiv)",
+            description = "Zeigt alle Gegenstände, die aktuell ausgeliehen sind. Sortiert nach Rückgabedatum.")
+    @GetMapping("/lenders/me/active")
+    public ResponseEntity<List<BookingDTO>> getMyActiveLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getActiveBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(summary = "Überfällige Ausleihen (Lender)",
+            description = "Zeigt nur die Ausleihen, deren Rückgabedatum überschritten ist.")
+    @GetMapping("/lenders/me/overdue")
+    public ResponseEntity<List<BookingDTO>> getMyOverdueLenderBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getOverdueBookingsByLenderId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
 
     // ========================================
     // POST ENDPOINT - Buchung erstellen
@@ -303,6 +336,8 @@ public class BookingController {
     // ========================================
 
     @Schema(description = "Anfrage zum Erstellen einer neuen Buchung")
+    @Getter
+    @Setter
     public static class CreateBookingRequest {
         @Schema(description = "ID des Items", example = "1")
         private Long itemId;
@@ -315,42 +350,29 @@ public class BookingController {
 
         @Schema(description = "Optionale Nachricht an den Verleiher", example = "Brauche es für Projekt")
         private String message;
-
-        // Getters & Setters
-        public Long getItemId() { return itemId; }
-        public void setItemId(Long itemId) { this.itemId = itemId; }
-        public LocalDateTime getStartDate() { return startDate; }
-        public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
-        public LocalDateTime getEndDate() { return endDate; }
-        public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
     }
 
     @Schema(description = "Anfrage zum Bestätigen einer Buchung mit Terminvorschlägen")
+    @Getter
+    @Setter
     public static class ConfirmBookingRequest {
         @Schema(description = "Liste mit vorgeschlagenen Abholterminen")
         private List<LocalDateTime> proposedPickups;
-
-        public List<LocalDateTime> getProposedPickups() { return proposedPickups; }
-        public void setProposedPickups(List<LocalDateTime> proposedPickups) { this.proposedPickups = proposedPickups; }
     }
 
     @Schema(description = "Anfrage zum Auswählen eines Abholtermins")
+    @Getter
+    @Setter
     public static class SelectPickupRequest {
         @Schema(description = "Ausgewählter Abholtermin", example = "2025-12-10T09:00:00")
         private LocalDateTime selectedPickup;
-
-        public LocalDateTime getSelectedPickup() { return selectedPickup; }
-        public void setSelectedPickup(LocalDateTime selectedPickup) { this.selectedPickup = selectedPickup; }
     }
 
     @Schema(description = "Anfrage zum Machen eines Gegenvorschlags")
+    @Getter
+    @Setter
     public static class ProposePickupsRequest {
         @Schema(description = "Liste mit neuen Terminvorschlägen")
         private List<LocalDateTime> proposedPickups;
-
-        public List<LocalDateTime> getProposedPickups() { return proposedPickups; }
-        public void setProposedPickups(List<LocalDateTime> proposedPickups) { this.proposedPickups = proposedPickups; }
     }
 }

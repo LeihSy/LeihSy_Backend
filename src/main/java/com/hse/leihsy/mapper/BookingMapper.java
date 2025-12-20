@@ -2,10 +2,12 @@ package com.hse.leihsy.mapper;
 
 import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.entity.Booking;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-
+import org.mapstruct.MappingTarget;
+import java.time.LocalDateTime;
+import com.hse.leihsy.model.entity.BookingStatus;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -21,7 +23,38 @@ public interface BookingMapper {
     @Mapping(target = "productName", source = "item.product.name")
     @Mapping(target = "proposalById", source = "proposalBy.id")
     @Mapping(target = "proposalByName", source = "proposalBy.name")
+    @Mapping(target = "urgent", ignore = true) // Wird im AfterMapping berechnet
+    @Mapping(target = "overdue", ignore = true) // Ignorieren während main mapping
     BookingDTO toDTO(Booking booking);
 
     List<BookingDTO> toDTOList(List<Booking> bookings);
+
+    // Logik zur Berechnung der Dringlichkeit und Überfälligkeit
+    @AfterMapping
+    default void calculateComputedFields(Booking booking, @MappingTarget BookingDTO dto) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // --- 1. DRINGLICHKEITSLOGIK ---
+        // Dringend, wenn vor mehr als 20 Stunden erstellt und noch PENDING
+        if (booking.getCreatedAt() != null) {
+            LocalDateTime limit20h = booking.getCreatedAt().plusHours(20);
+            if (now.isAfter(limit20h) && "PENDING".equals(dto.getStatus())) {
+                dto.setUrgent(true);
+            }
+            else {
+                dto.setUrgent(false);
+            }
+        }
+
+            // --- 2. ÜBERFÄLLIG-LOGIK ---
+            // Überfällig, wenn: Element den Status PICKED_UP (aktiv) hat UND das Enddatum in der Vergangenheit liegt
+        boolean isActive = booking.getDistributionDate() != null && booking.getReturnDate() == null;
+
+        if (isActive && booking.getEndDate().isBefore(now)) {
+            dto.setOverdue(true);
+        }
+        else {
+            dto.setOverdue(false);
+        }
+    }
 }

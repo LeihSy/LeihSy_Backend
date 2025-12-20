@@ -3,6 +3,8 @@ package com.hse.leihsy.model.entity;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
+
 
 /**
  * Item Entity - Physisches Exemplar eines Products.
@@ -12,6 +14,12 @@ import java.util.List;
  */
 @Entity
 @Table(name = "items")
+@Getter
+@Setter
+@NoArgsConstructor
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+
 public class Item extends BaseEntity {
 
     /**
@@ -51,31 +59,9 @@ public class Item extends BaseEntity {
     /**
      * Buchungen für dieses Item
      */
+    @Builder.Default
     @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     private List<Booking> bookings = new ArrayList<>();
-
-    // Constructors
-
-    public Item() {
-    }
-
-    public Item(String invNumber, Product product) {
-        this.invNumber = invNumber;
-        this.product = product;
-    }
-
-    public Item(String invNumber, String owner, Product product) {
-        this.invNumber = invNumber;
-        this.owner = owner;
-        this.product = product;
-    }
-
-    public Item(String invNumber, String owner, User lender, Product product) {
-        this.invNumber = invNumber;
-        this.owner = owner;
-        this.lender = lender;
-        this.product = product;
-    }
 
     // Helper Methods
 
@@ -109,55 +95,5 @@ public class Item extends BaseEntity {
 
                     return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
                 });
-    }
-
-    // Getters and Setters
-
-    public Long getInsyId() {
-        return insyId;
-    }
-
-    public void setInsyId(Long insyId) {
-        this.insyId = insyId;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public String getInvNumber() {
-        return invNumber;
-    }
-
-    public void setInvNumber(String invNumber) {
-        this.invNumber = invNumber;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public User getLender() {
-        return lender;
-    }
-
-    public void setLender(User lender) {
-        this.lender = lender;
-    }
-
-    public List<Booking> getBookings() {
-        return bookings;
-    }
-
-    public void setBookings(List<Booking> bookings) {
-        this.bookings = bookings;
     }
 }

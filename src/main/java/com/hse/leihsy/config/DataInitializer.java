@@ -151,76 +151,88 @@ public class DataInitializer {
             // ==========================================
 
             // Meta Quest 3 - 3 Stueck (Verleiher: Christian)
-            Item quest1 = new Item();
-            quest1.setInvNumber("VR-001");
-            quest1.setOwner("Christian Haas");
-            quest1.setProduct(metaQuest3);
-            quest1.setLender(verleiherChristian);
+            Item quest1 = Item.builder()
+                    .invNumber("VR-001")
+                    .owner("Christian Haas")
+                    .product(metaQuest3)
+                    .lender(verleiherChristian)
+                    .build();
 
-            Item quest2 = new Item();
-            quest2.setInvNumber("VR-002");
-            quest2.setOwner("Christian Haas");
-            quest2.setProduct(metaQuest3);
-            quest2.setLender(verleiherChristian);
+            Item quest2 = Item.builder()
+                    .invNumber("VR-002")
+                    .owner("Christian Haas")
+                    .product(metaQuest3)
+                    .lender(verleiherChristian)
+                    .build();
 
-            Item quest3 = new Item();
-            quest3.setInvNumber("VR-003");
-            quest3.setOwner("Christian Haas");
-            quest3.setProduct(metaQuest3);
-            quest3.setLender(verleiherChristian);
+            Item quest3 = Item.builder()
+                    .invNumber("VR-003")
+                    .owner("Christian Haas")
+                    .product(metaQuest3)
+                    .lender(verleiherChristian)
+                    .build();
 
             // HTC Vive - 1 Stueck (Verleiher: Christian)
-            Item vive1 = new Item();
-            vive1.setInvNumber("VR-010");
-            vive1.setOwner("Christian Haas");
-            vive1.setProduct(htcVive);
-            vive1.setLender(verleiherChristian);
+            Item vive1 = Item.builder()
+                    .invNumber("VR-010")
+                    .owner("Christian Haas")
+                    .product(htcVive)
+                    .lender(verleiherChristian)
+                    .build();
 
             // Sony A7 - 2 Stueck (Verleiher: Christian)
-            Item sony1 = new Item();
-            sony1.setInvNumber("CAM-001");
-            sony1.setOwner("Christian Haas");
-            sony1.setProduct(sonyA7);
-            sony1.setLender(verleiherChristian);
+            Item sony1 = Item.builder()
+                    .invNumber("CAM-001")
+                    .owner("Christian Haas")
+                    .product(sonyA7)
+                    .lender(verleiherChristian)
+                    .build();
 
-            Item sony2 = new Item();
-            sony2.setInvNumber("CAM-002");
-            sony2.setOwner("Christian Haas");
-            sony2.setProduct(sonyA7);
-            sony2.setLender(verleiherChristian);
+            Item sony2 = Item.builder()
+                    .invNumber("CAM-002")
+                    .owner("Christian Haas")
+                    .product(sonyA7)
+                    .lender(verleiherChristian)
+                    .build();
 
             // Canon - 1 Stueck (Verleiher: Andreas)
-            Item canon1 = new Item();
-            canon1.setInvNumber("CAM-010");
-            canon1.setOwner("Andreas Heinrich");
-            canon1.setProduct(canonEOS);
-            canon1.setLender(verleiherAndreas);
+            Item canon1 = Item.builder()
+                    .invNumber("CAM-010")
+                    .owner("Andreas Heinrich")
+                    .product(canonEOS)
+                    .lender(verleiherAndreas)
+                    .build();
 
             // Mikrofon - 2 Stueck (Verleiher: Andreas)
-            Item rode1 = new Item();
-            rode1.setInvNumber("AUD-001");
-            rode1.setOwner("KEIM");
-            rode1.setProduct(rodeNT1);
-            rode1.setLender(verleiherAndreas);
+            Item rode1 = Item.builder()
+                    .invNumber("AUD-001")
+                    .owner("KEIM")
+                    .product(rodeNT1)
+                    .lender(verleiherAndreas)
+                    .build();
 
-            Item rode2 = new Item();
-            rode2.setInvNumber("AUD-002");
-            rode2.setOwner("KEIM");
-            rode2.setProduct(rodeNT1);
-            rode2.setLender(verleiherAndreas);
+            Item rode2 = Item.builder()
+                    .invNumber("AUD-002")
+                    .owner("KEIM")
+                    .product(rodeNT1)
+                    .lender(verleiherAndreas)
+                    .build();
 
             // MacBook - 2 Stueck (Verleiher: Andreas)
-            Item mac1 = new Item();
-            mac1.setInvNumber("IT-001");
-            mac1.setOwner("KEIM");
-            mac1.setProduct(macbookPro);
-            mac1.setLender(verleiherAndreas);
+            Item mac1 = Item.builder()
+                    .invNumber("IT-001")
+                    .owner("KEIM")
+                    .product(macbookPro)
+                    .lender(verleiherAndreas)
+                    .build();
 
-            Item mac2 = new Item();
-            mac2.setInvNumber("IT-002");
-            mac2.setOwner("KEIM");
-            mac2.setProduct(macbookPro);
-            mac2.setLender(verleiherAndreas);
+            Item mac2 = Item.builder()
+                    .invNumber("IT-002")
+                    .owner("KEIM")
+                    .product(macbookPro)
+                    .lender(verleiherAndreas)
+                    .build();
+
 
             itemRepo.save(quest1);
             itemRepo.save(quest2);

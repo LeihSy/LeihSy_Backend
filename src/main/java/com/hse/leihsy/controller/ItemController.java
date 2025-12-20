@@ -39,16 +39,6 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTOList(items));
     }
 
-    @Operation(summary = "Get all deleted items", description = "Returns a list of all deleted items (where deletedAt is not null)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Deleted items retrieved successfully")
-    })
-    @GetMapping("/deleted")
-    public ResponseEntity<List<ItemDTO>> getAllDeletedItems() {
-        List<Item> items = itemService.getAllDeletedItems();
-        return ResponseEntity.ok(itemMapper.toDTOList(items));
-    }
-
     @Operation(summary = "Get item by ID", description = "Returns an item with the matching ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item found"),

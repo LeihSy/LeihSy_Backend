@@ -3,8 +3,8 @@ package com.hse.leihsy.controller;
 import com.hse.leihsy.mapper.LocationMapper;
 import com.hse.leihsy.model.dto.LocationDTO;
 import com.hse.leihsy.model.entity.Location;
-import com.hse.leihsy.repository.ItemRepository;
 import com.hse.leihsy.repository.LocationRepository;
+import com.hse.leihsy.repository.ItemRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,11 +29,7 @@ public class LocationController {
 
     private final LocationRepository locationRepository;
     private final LocationMapper locationMapper;
-
-    public LocationController(LocationRepository locationRepository, LocationMapper locationMapper) {
-        this.locationRepository = locationRepository;
-        this.locationMapper = locationMapper;
-    }
+    private final ItemRepository itemRepository;
 
     @Operation(
             summary = "Get all locations",

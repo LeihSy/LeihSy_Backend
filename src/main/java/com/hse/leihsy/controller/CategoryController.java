@@ -29,11 +29,7 @@ public class CategoryController {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
-
-    public CategoryController(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
-        this.categoryRepository = categoryRepository;
-        this.categoryMapper = categoryMapper;
-    }
+    private final ProductRepository productRepository;
 
     @Operation(
             summary = "Get all categories",

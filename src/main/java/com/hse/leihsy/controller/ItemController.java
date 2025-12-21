@@ -9,11 +9,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.*;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
@@ -21,34 +22,33 @@ import java.util.List;
 @RequestMapping(value = "/api/items", produces = "application/json")
 @CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
+@Tag(name = "item-controller", description = "APIs for managing physical items (exemplars)")
 public class ItemController {
 
     private final ItemService itemService;
     private final ItemMapper itemMapper;
 
-    // Alle Items abrufen
-    @Operation(summary = "Get all items", description = "Returns a list of all items")
+    // ========================================
+    // GET ENDPOINTS
+    // ========================================
+
+    @Operation(summary = "Get all items", description = "Returns a list of all items. Use ?deleted=true to include deleted items.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
     })
     @GetMapping
-    public ResponseEntity<List<ItemDTO>> getAllItems() {
-        List<Item> items = itemService.getAllItems();
+    public ResponseEntity<List<ItemDTO>> getAllItems(
+            @Parameter(description = "Include deleted items") @RequestParam(required = false) Boolean deleted
+    ) {
+        List<Item> items;
+        if (Boolean.TRUE.equals(deleted)) {
+            items = itemService.getAllDeletedItems();
+        } else {
+            items = itemService.getAllItems();
+        }
         return ResponseEntity.ok(itemMapper.toDTOList(items));
     }
 
-    // Holt alle gelöschten Items
-    @Operation(summary = "Get all deleted items", description = "Returns a list of all deleted items (where deletedAt is not null)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Deleted items retrieved successfully")
-    })
-    @GetMapping("/deleted")
-    public ResponseEntity<List<ItemDTO>> getAllDeletedItems() {
-        List<Item> items = itemService.getAllDeletedItems();
-        return ResponseEntity.ok(itemMapper.toDTOList(items));
-    }
-
-    // Item anhand der ID abrufen
     @Operation(summary = "Get item by ID", description = "Returns an item with the matching ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item found"),
@@ -61,41 +61,9 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
-    // Filter nach Produkt
-    @Operation(summary = "Get items by product", description = "Returns a list of items filtered by product ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
-    })
-    @GetMapping("/products/{productId}")
-    public ResponseEntity<List<ItemDTO>> getItemsByProduct(
-            @Parameter(description = "ID of the product") @PathVariable Long productId) {
-        List<Item> items = itemService.getItemsByProduct(productId);
-        return ResponseEntity.ok(itemMapper.toDTOList(items));
-    }
-
-    @Operation(summary = "Get item by inventory number", description = "Returns an item by its inventory number")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Item found"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
-    @GetMapping("/invnumber/{invNumber}")
-    public ResponseEntity<ItemDTO> getItemByInvNumber(
-            @Parameter(description = "Inventory number of the item") @PathVariable String invNumber) {
-        Item item = itemService.getItemByInvNumber(invNumber);
-        return ResponseEntity.ok(itemMapper.toDTO(item));
-    }
-
-    // Filter nach Verleiher
-    @Operation(summary = "Get items by lender", description = "Returns a list of items assigned to a specific lender")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
-    })
-    @GetMapping("/lender/{lenderId}")
-    public ResponseEntity<List<ItemDTO>> getItemsByLender(
-            @Parameter(description = "ID of the lender (User ID)") @PathVariable Long lenderId) {
-        List<Item> items = itemService.getItemsByLender(lenderId);
-        return ResponseEntity.ok(itemMapper.toDTOList(items));
-    }
+    // ========================================
+    // POST ENDPOINT
+    // ========================================
 
     @Operation(summary = "Create a new item", description = "Creates a new item with the given data")
     @ApiResponses({
@@ -114,7 +82,10 @@ public class ItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body(itemMapper.toDTO(item));
     }
 
-    // Item aktualisieren
+    // ========================================
+    // PUT ENDPOINT
+    // ========================================
+
     @Operation(summary = "Update an item", description = "Updates an existing item by ID. Assigns new lender if lenderId is provided.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item updated successfully"),
@@ -133,7 +104,10 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
-    // Item löschen
+    // ========================================
+    // DELETE ENDPOINT
+    // ========================================
+
     @Operation(summary = "Delete an item", description = "Deletes an item by ID (soft delete)")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Item deleted successfully"),

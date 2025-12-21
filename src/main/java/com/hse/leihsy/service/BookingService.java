@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.model.dto.BookingDTO;
+import com.hse.leihsy.model.dto.BookingStatusUpdateDTO;
 import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.model.entity.BookingStatus;
 import com.hse.leihsy.model.entity.Item;
@@ -15,8 +16,6 @@ import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.hse.leihsy.model.dto.BookingStatusUpdateDTO;
-import com.hse.leihsy.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -181,7 +180,6 @@ public class BookingService {
         return bookingMapper.toDTOList(bookings);
     }
 
-
     // ========================================
     // GET METHODEN - ENTITIES (für interne Nutzung)
     // ========================================
@@ -205,52 +203,41 @@ public class BookingService {
     public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
                                     LocalDateTime endDate, String message) {
 
-        // User validieren
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
-        // Item validieren
+        // Prüfe ob Item existiert und verfügbar ist
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
 
-        // Prüfen ob Item einen Lender hat
-        if (item.getLender() == null) {
-            throw new RuntimeException("Item has no assigned lender");
+        // Prüfe ob User existiert
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Prüfe Verfügbarkeit (keine überlappenden Bookings)
+        List<Booking> overlapping = bookingRepository.findOverlappingBookings(itemId, startDate, endDate);
+        if (!overlapping.isEmpty()) {
+            throw new RuntimeException("Item is not available for the requested period");
         }
 
-        // Verfügbarkeit prüfen
-        boolean isAvailable = checkAvailability(itemId, startDate, endDate);
-        if (!isAvailable) {
-            throw new RuntimeException("Item is not available in the requested time range");
+        // Hole Verleiher
+        User lender = item.getLender();
+        if (lender == null) {
+            throw new RuntimeException("No lender assigned to this product");
         }
 
-        // Booking erstellen
+        // Erstelle Booking
         Booking booking = new Booking();
         booking.setUser(user);
-        booking.setLender(item.getLender());
+        booking.setLender(lender);
         booking.setItem(item);
-        booking.setMessage(message);
         booking.setStartDate(startDate);
         booking.setEndDate(endDate);
         booking.setMessage(message);
 
-        booking.setStatus(BookingStatus.PENDING.name());
         Booking saved = bookingRepository.save(booking);
-        return bookingMapper.toDTO(saved);  // ← DTO zurückgeben!
-    }
-
-    /**
-     * Prüft ob ein Item im gewünschten Zeitraum verfügbar ist
-     */
-    private boolean checkAvailability(Long itemId, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Booking> conflictingBookings = bookingRepository.findOverlappingBookings(
-                itemId, startDate, endDate
-        );
-        return conflictingBookings.isEmpty();
+        return bookingMapper.toDTO(saved);
     }
 
     // ========================================
-    // UPDATE METHODEN - MIT DTOs
+    // UPDATE METHODEN
     // ========================================
 
     /**
@@ -309,30 +296,6 @@ public class BookingService {
         booking.setProposalBy(userRepository.findById(proposerId).orElseThrow());
         booking.setConfirmedPickup(null);
 
-        Booking saved = bookingRepository.save(booking);
-        return bookingMapper.toDTO(saved);
-    }
-
-    /**
-     * Verleiher lehnt Booking ab
-     */
-    @Transactional
-    public BookingDTO rejectBooking(Long id) {
-        Booking booking = getBookingById(id);
-
-        if (booking.calculateStatus() == BookingStatus.RETURNED) {
-            throw new RuntimeException("Cannot reject a returned booking");
-        }
-
-        if (booking.calculateStatus() != BookingStatus.PENDING &&
-                booking.calculateStatus() != BookingStatus.CONFIRMED) {
-            throw new IllegalStateException("Can only reject PENDING or CONFIRMED bookings");
-        }
-        if (booking.getDeletedAt() != null) {
-            throw new IllegalStateException("Booking already cancelled");
-        }
-
-        booking.setDeletedAt(LocalDateTime.now());
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);
     }
@@ -423,7 +386,7 @@ public class BookingService {
     }
 
     /**
-     * Student oder Admin storniert Booking
+     * Student oder Admin storniert Booking (auch für Verleiher-Reject)
      */
     @Transactional
     public void cancelBooking(Long id) {

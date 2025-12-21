@@ -26,6 +26,7 @@ public class ItemController {
     private final ItemService itemService;
     private final ItemMapper itemMapper;
 
+    // Alle Items abrufen
     @Operation(summary = "Get all items", description = "Returns a list of all items")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
@@ -36,6 +37,7 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTOList(items));
     }
 
+    // Item anhand der ID abrufen
     @Operation(summary = "Get item by ID", description = "Returns an item with the matching ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item found"),
@@ -48,6 +50,7 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
+    // Filter nach Produkt
     @Operation(summary = "Get items by product", description = "Returns a list of items filtered by product ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
@@ -59,6 +62,19 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTOList(items));
     }
 
+    // Filter nach Verleiher
+    @Operation(summary = "Get items by lender", description = "Returns a list of items assigned to a specific lender")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
+    })
+    @GetMapping("/lender/{lenderId}")
+    public ResponseEntity<List<ItemDTO>> getItemsByLender(
+            @Parameter(description = "ID of the lender (User ID)") @PathVariable Long lenderId) {
+        List<Item> items = itemService.getItemsByLender(lenderId);
+        return ResponseEntity.ok(itemMapper.toDTOList(items));
+    }
+
+    // Suche nach Inventarnummer
     @Operation(summary = "Get item by inventory number", description = "Returns an item by its inventory number")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item found"),
@@ -71,7 +87,8 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
-    @Operation(summary = "Create a new item", description = "Creates a new item with the given data")
+    // Neues Item erstellen
+    @Operation(summary = "Create a new item", description = "Creates a new item Lender can be assigned via lenderId.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Item created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request data")
@@ -88,7 +105,8 @@ public class ItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body(itemMapper.toDTO(item));
     }
 
-    @Operation(summary = "Update an item", description = "Updates an existing item by ID")
+    // Item aktualisieren
+    @Operation(summary = "Update an item", description = "Updates an existing item by ID. Assigns new lender if lenderId is provided.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item updated successfully"),
             @ApiResponse(responseCode = "404", description = "Item not found")
@@ -106,6 +124,7 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
+    // Item löschen
     @Operation(summary = "Delete an item", description = "Deletes an item by ID (soft delete)")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Item deleted successfully"),

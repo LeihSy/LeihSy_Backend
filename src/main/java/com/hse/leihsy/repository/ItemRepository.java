@@ -16,6 +16,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("SELECT i FROM Item i WHERE i.deletedAt IS NULL")
     List<Item> findAllActive();
 
+    // Alle gelöschten Items
+    @Query("SELECT i FROM Item i WHERE i.deletedAt IS NOT NULL")
+    List<Item> findAllDeleted();
+
     // Items eines Products
     @Query("SELECT i FROM Item i WHERE i.product.id = :productId AND i.deletedAt IS NULL")
     List<Item> findByProductId(@Param("productId") Long productId);

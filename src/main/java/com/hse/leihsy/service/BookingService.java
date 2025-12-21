@@ -34,6 +34,14 @@ public class BookingService {
     // ========================================
 
     /**
+     * Holt alle Bookings als DTOs (Admin-Funktion)
+     */
+    public List<BookingDTO> getAllBookings() {
+        List<Booking> bookings = bookingRepository.findAll();
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
      * Holt eine Booking als DTO anhand der ID
      */
     public BookingDTO getBookingDTOById(Long id) {
@@ -46,6 +54,14 @@ public class BookingService {
      */
     public List<BookingDTO> getBookingsByUserId(Long userId) {
         List<Booking> bookings = bookingRepository.findByUserId(userId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt alle gelöschten/stornierten Bookings eines Users als DTOs (als Student/Entleiher)
+     */
+    public List<BookingDTO> getDeletedBookingsByUserId(Long userId) {
+        List<Booking> bookings = bookingRepository.findDeletedByUserId(userId);
         return bookingMapper.toDTOList(bookings);
     }
 

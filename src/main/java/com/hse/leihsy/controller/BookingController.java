@@ -34,6 +34,20 @@ public class BookingController {
     // GET ENDPOINTS
     // ========================================
 
+    @Operation(summary = "Alle Buchungen abrufen (Admin)",
+            description = "Holt alle Buchungen im System. Nur für Administratoren zugänglich.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen",
+                    content = @Content(schema = @Schema(implementation = BookingDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - Admin-Rolle erforderlich")
+    })
+    @GetMapping
+    public ResponseEntity<List<BookingDTO>> getAllBookings() {
+        List<BookingDTO> bookings = bookingService.getAllBookings();
+        return ResponseEntity.ok(bookings);
+    }
+
     @Operation(summary = "Eigene PENDING Anfragen als Verleiher abrufen",
             description = "Holt alle offenen Buchungsanfragen für den eingeloggten Verleiher")
     @ApiResponses(value = {
@@ -77,6 +91,20 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @Operation(summary = "Eigene gelöschte/stornierte Buchungen als Student abrufen",
+            description = "Holt alle gelöschten/stornierten Buchungen die der eingeloggte User als Student/Entleiher erstellt hat")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen",
+                    content = @Content(schema = @Schema(implementation = BookingDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
+    @GetMapping("/users/me/deleted")
+    public ResponseEntity<List<BookingDTO>> getMyDeletedBookings() {
+        User currentUser = userService.getCurrentUser();
+        List<BookingDTO> bookings = bookingService.getDeletedBookingsByUserId(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
     @Operation(summary = "Einzelne Buchung abrufen",
             description = "Holt eine spezifische Buchung anhand ihrer ID")
     @ApiResponses(value = {
@@ -108,7 +136,7 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - Admin-Rolle erforderlich")
     })
     @GetMapping("/users/{userId}")
     public ResponseEntity<List<BookingDTO>> getBookingsByUserId(
@@ -122,7 +150,7 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - Admin-Rolle erforderlich")
     })
     @GetMapping("/lenders/{lenderId}")
     public ResponseEntity<List<BookingDTO>> getBookingsByLenderId(
@@ -136,7 +164,7 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - Admin-Rolle erforderlich")
     })
     @GetMapping("/lenders/{lenderId}/pending")
     public ResponseEntity<List<BookingDTO>> getPendingBookingsByLenderId(

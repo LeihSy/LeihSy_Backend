@@ -28,4 +28,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND p.deletedAt IS NULL")
     List<Product> fullTextSearch(@Param("search") String search);
+
+    // Zaehlt alle aktiven Products in einer bestimmten Kategorie
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId AND p.deletedAt IS NULL")
+    long countByCategoryId(@Param("categoryId") Long categoryId);
 }

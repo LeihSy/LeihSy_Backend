@@ -15,6 +15,8 @@ import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.hse.leihsy.model.dto.BookingStatusUpdateDTO;
+import com.hse.leihsy.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +30,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final BookingMapper bookingMapper;
+    private final UserService userService;
 
     // ========================================
     // GET METHODEN - MIT DTOs
@@ -58,6 +61,21 @@ public class BookingService {
     }
 
     /**
+     * Holt alle Bookings eines Users als DTOs (als Student/Entleiher)
+     */
+    public List<BookingDTO> getBookingsByUserId(Long userId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findAll().stream()
+                    .filter(b -> b.getUser() != null && b.getUser().getId().equals(userId))
+                    .toList();
+        } else {
+            bookings = bookingRepository.findByUserId(userId);
+        }
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
      * Holt alle gelöschten/stornierten Bookings eines Users als DTOs (als Student/Entleiher)
      */
     public List<BookingDTO> getDeletedBookingsByUserId(Long userId) {
@@ -68,16 +86,31 @@ public class BookingService {
     /**
      * Holt alle Bookings eines Verleihers als DTOs
      */
-    public List<BookingDTO> getBookingsByLenderId(Long lenderId) {
-        List<Booking> bookings = bookingRepository.findByLenderId(lenderId);
+    public List<BookingDTO> getBookingsByLenderId(Long lenderId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findAll().stream()
+                    .filter(b -> b.getLender() != null && b.getLender().getId().equals(lenderId))
+                    .toList();
+        } else {
+            bookings = bookingRepository.findByLenderId(lenderId);
+        }
         return bookingMapper.toDTOList(bookings);
     }
 
     /**
      * Holt alle PENDING Bookings eines Verleihers als DTOs
      */
-    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId, Long itemId) {
-        List<Booking> bookings = bookingRepository.findPendingByLenderIdAndOptionalItem(lenderId, itemId);
+    public List<BookingDTO> getPendingBookingsByLenderId(Long lenderId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findAll().stream()
+                    .filter(b -> b.getLender() != null && b.getLender().getId().equals(lenderId))
+                    .filter(b -> b.calculateStatus() == BookingStatus.PENDING)
+                    .toList();
+        } else {
+            bookings = bookingRepository.findPendingByLenderId(lenderId);
+        }
         return bookingMapper.toDTOList(bookings);
     }
 
@@ -86,6 +119,40 @@ public class BookingService {
      */
     public List<BookingDTO> getOverdueBookings() {
         List<Booking> bookings = bookingRepository.findOverdue(LocalDateTime.now());
+        return bookingMapper.toDTOList(bookings);
+    }
+
+    /**
+     * Holt alle Bookings mit optionalem Status-Filter
+     * Nutzt optimierte Repository-Queries statt Stream-Filterung
+     *
+     * @param status Optional: "overdue", "pending", "confirmed", "picked_up", "returned", "cancelled", "expired", "rejected"
+     * @return Liste von BookingDTOs
+     */
+    public List<BookingDTO> getAllBookings(String status) {
+        List<Booking> bookings;
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold24h = now.minusHours(24);
+
+        if (status == null || status.isBlank()) {
+            // Alle Bookings (ohne gelöschte)
+            bookings = bookingRepository.findAllActive();
+        } else {
+            // Nach Status filtern mit spezifischen Queries
+            bookings = switch (status.toLowerCase()) {
+                case "overdue" -> bookingRepository.findOverdue(now);
+                case "pending" -> bookingRepository.findAllPending(threshold24h);
+                case "confirmed" -> bookingRepository.findAllConfirmed(threshold24h);
+                case "picked_up" -> bookingRepository.findAllPickedUp();
+                case "returned" -> bookingRepository.findAllReturned();
+                case "cancelled" -> bookingRepository.findAllCancelled(threshold24h);
+                case "expired" -> bookingRepository.findAllExpired(threshold24h);
+                case "rejected" -> bookingRepository.findAllRejected();
+                default -> throw new IllegalArgumentException("Invalid status: " + status +
+                        ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected");
+            };
+        }
+
         return bookingMapper.toDTOList(bookings);
     }
 
@@ -308,6 +375,51 @@ public class BookingService {
         booking.setReturnDate(LocalDateTime.now());
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);
+    }
+
+    /**
+     * Generische Methode für alle Status-Updates via PATCH-Endpoint
+     *
+     * @param id Booking ID
+     * @param updateDTO DTO mit action und optionalen Parametern
+     * @return Aktualisierte Booking als DTO
+     */
+    @Transactional
+    public BookingDTO updateStatus(Long id, BookingStatusUpdateDTO updateDTO) {
+        String action = updateDTO.getAction();
+
+        if (action == null || action.isBlank()) {
+            throw new IllegalArgumentException("Action is required");
+        }
+
+        User currentUser = userService.getCurrentUser();
+
+        return switch (action.toLowerCase()) {
+            case "confirm" -> {
+                if (updateDTO.getProposedPickups() == null || updateDTO.getProposedPickups().isEmpty()) {
+                    throw new IllegalArgumentException("proposedPickups is required for action 'confirm'");
+                }
+                yield confirmBooking(id, updateDTO.getProposedPickups());
+            }
+            case "select_pickup" -> {
+                if (updateDTO.getSelectedPickup() == null) {
+                    throw new IllegalArgumentException("selectedPickup is required for action 'select_pickup'");
+                }
+                yield selectPickupTime(id, updateDTO.getSelectedPickup());
+            }
+            case "propose" -> {
+                if (updateDTO.getProposedPickups() == null || updateDTO.getProposedPickups().isEmpty()) {
+                    throw new IllegalArgumentException("proposedPickups is required for action 'propose'");
+                }
+                yield proposeNewPickups(id, currentUser.getId(), updateDTO.getProposedPickups());
+            }
+            case "pickup" -> recordPickup(id);
+            case "return" -> recordReturn(id);
+            default -> throw new IllegalArgumentException(
+                    "Invalid action: " + action +
+                            ". Valid values: confirm, select_pickup, propose, pickup, return"
+            );
+        };
     }
 
     /**

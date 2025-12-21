@@ -120,4 +120,65 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("now") LocalDateTime now
     );
 
+
+    // Alle Bookings nach berechnetem Status
+    // PENDING: Noch keine proposedPickups UND < 24h alt
+    @Query("SELECT b FROM Booking b WHERE b.proposedPickups IS NULL " +
+            "AND b.confirmedPickup IS NULL " +
+            "AND b.distributionDate IS NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "AND b.createdAt > :threshold " +  // NEU: Nicht älter als 24h
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllPending(@Param("threshold") LocalDateTime threshold);
+
+    // CANCELLED: > 24h alt, noch nicht bestätigt
+    @Query("SELECT b FROM Booking b WHERE b.proposedPickups IS NULL " +
+            "AND b.confirmedPickup IS NULL " +
+            "AND b.distributionDate IS NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "AND b.createdAt <= :threshold " +  // Älter als 24h
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllCancelled(@Param("threshold") LocalDateTime threshold);
+
+    // EXPIRED: confirmedPickup > 24h alt, aber nicht abgeholt
+    @Query("SELECT b FROM Booking b WHERE b.confirmedPickup IS NOT NULL " +
+            "AND b.confirmedPickup < :threshold " +  // confirmedPickup > 24h alt
+            "AND b.distributionDate IS NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllExpired(@Param("threshold") LocalDateTime threshold);
+
+    // CONFIRMED: confirmedPickup gesetzt, < 24h alt, nicht abgeholt
+    @Query("SELECT b FROM Booking b WHERE b.confirmedPickup IS NOT NULL " +
+            "AND b.confirmedPickup >= :threshold " +  // confirmedPickup < 24h alt
+            "AND b.distributionDate IS NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllConfirmed(@Param("threshold") LocalDateTime threshold);
+
+    // PICKED_UP: Ausgegeben, aber noch nicht zurück
+    @Query("SELECT b FROM Booking b WHERE b.distributionDate IS NOT NULL " +
+            "AND b.returnDate IS NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllPickedUp();
+
+    // RETURNED: Zurückgegeben
+    @Query("SELECT b FROM Booking b WHERE b.returnDate IS NOT NULL " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllReturned();
+
+    // REJECTED: Soft-deleted
+    @Query("SELECT b FROM Booking b WHERE b.deletedAt IS NOT NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findAllRejected();
+
+    // Alle aktiven Bookings (ohne gelöschte)
+    @Query("SELECT b FROM Booking b WHERE b.deletedAt IS NULL ORDER BY b.createdAt DESC")
+    List<Booking> findAllActive();
 }

@@ -34,4 +34,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     // Zaehle verfuegbare Items eines Products
     @Query("SELECT COUNT(i) FROM Item i WHERE i.product.id = :productId AND i.deletedAt IS NULL")
     Long countByProductId(@Param("productId") Long productId);
+
+    // Zaehlt alle aktiven Items an einem bestimmten Standort
+    @Query("SELECT COUNT(i) FROM Item i WHERE i.product.location.id = :locationId AND i.deletedAt IS NULL")
+    long countByProductLocationId(@Param("locationId") Long locationId);
 }

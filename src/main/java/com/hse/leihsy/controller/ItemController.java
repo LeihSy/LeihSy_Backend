@@ -73,19 +73,6 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTOList(items));
     }
 
-    // Filter nach Verleiher
-    @Operation(summary = "Get items by lender", description = "Returns a list of items assigned to a specific lender")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
-    })
-    @GetMapping("/lender/{lenderId}")
-    public ResponseEntity<List<ItemDTO>> getItemsByLender(
-            @Parameter(description = "ID of the lender (User ID)") @PathVariable Long lenderId) {
-        List<Item> items = itemService.getItemsByLender(lenderId);
-        return ResponseEntity.ok(itemMapper.toDTOList(items));
-    }
-
-    // Suche nach Inventarnummer
     @Operation(summary = "Get item by inventory number", description = "Returns an item by its inventory number")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item found"),
@@ -98,8 +85,19 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
-    // Neues Item erstellen
-    @Operation(summary = "Create a new item", description = "Creates a new item Lender can be assigned via lenderId.")
+    // Filter nach Verleiher
+    @Operation(summary = "Get items by lender", description = "Returns a list of items assigned to a specific lender")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
+    })
+    @GetMapping("/lender/{lenderId}")
+    public ResponseEntity<List<ItemDTO>> getItemsByLender(
+            @Parameter(description = "ID of the lender (User ID)") @PathVariable Long lenderId) {
+        List<Item> items = itemService.getItemsByLender(lenderId);
+        return ResponseEntity.ok(itemMapper.toDTOList(items));
+    }
+
+    @Operation(summary = "Create a new item", description = "Creates a new item with the given data")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Item created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request data")

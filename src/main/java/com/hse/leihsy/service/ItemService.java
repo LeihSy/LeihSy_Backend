@@ -42,7 +42,7 @@ public class ItemService {
                 .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + invNumber));
     }
 
-    public List<Item> getItemsByProduct(Long productId) {
+    public List<Item> getItemsByProductId(Long productId) {
         return itemRepository.findByProductId(productId);
     }
 

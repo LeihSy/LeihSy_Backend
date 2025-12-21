@@ -9,6 +9,7 @@ import com.hse.leihsy.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // for Lombok Logging
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ItemService {
 
     private final ItemRepository itemRepository;
@@ -39,6 +41,8 @@ public class ItemService {
     public List<Item> getItemsByProduct(Long productId) {
         return itemRepository.findByProductId(productId);
     }
+
+    public List<Item> getItemsByLender(Long lenderId) { return itemRepository.findByLenderId(lenderId); }
 
     public Long countItemsByProduct(Long productId) {
         return itemRepository.countByProductId(productId);
@@ -68,6 +72,7 @@ public class ItemService {
     }
 
     public List<Item> createItemSet(String invNumberPrefix, String owner, Long productId, Long lenderId, int count) {
+        log.info("Creating item set. Prefix: {}, Count: {}, LenderId: {}", invNumberPrefix, count, lenderId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + productId));
 
@@ -118,6 +123,7 @@ public class ItemService {
     }
 
     public void deleteItem(Long id) {
+        log.info("Deleting item {}", id);
         Item item = getItemById(id);
         item.softDelete();
         itemRepository.save(item);

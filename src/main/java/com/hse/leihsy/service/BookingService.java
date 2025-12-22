@@ -15,12 +15,14 @@ import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingService {
 
     private final BookingRepository bookingRepository;
@@ -282,14 +284,16 @@ public class BookingService {
         Booking booking = getBookingById(id);
 
         if (booking.getDistributionDate() == null) {
-            throw new RuntimeException("Item not picked up yet");
+            throw new RuntimeException("Artikel wurde noch nicht abgeholt.");
         }
 
         if (booking.getReturnDate() != null) {
-            throw new RuntimeException("Item already returned");
+            throw new RuntimeException("Artikel wurde bereits zurückgegeben.");
         }
 
         booking.setReturnDate(LocalDateTime.now());
+        log.info("Rückgabe dokumentiert: Buchung ID {}, Item {}, User {}",
+                id, booking.getItem().getInvNumber(), booking.getUser().getUniqueId());
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);
     }

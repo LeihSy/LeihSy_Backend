@@ -61,6 +61,15 @@ public class ItemController {
         return ResponseEntity.ok(itemMapper.toDTO(item));
     }
 
+
+    @Operation(summary = "Get items by lender", description = "Returns all items assigned to a specific lender")
+    @GetMapping("/lender/{lenderId}")
+    public ResponseEntity<List<ItemDTO>> getItemsByLender(
+            @Parameter(description = "ID of the lender") @PathVariable Long lenderId) {
+        List<Item> items = itemService.getItemsByLender(lenderId);
+        return ResponseEntity.ok(itemMapper.toDTOList(items));
+    }
+
     // ========================================
     // POST ENDPOINT
     // ========================================

@@ -52,4 +52,40 @@ public class LenderController {
 
         return ResponseEntity.ok(bookings);
     }
+
+    @Operation(
+            summary = "Get upcoming pickups for lender",
+            description = "Returns confirmed bookings that are waiting for pickup. Sorted by pickup date."
+    )
+    @GetMapping("/{lenderId}/upcoming")
+    public ResponseEntity<List<BookingDTO>> getLenderUpcoming(
+            @Parameter(description = "ID of the lender") @PathVariable Long lenderId
+    ) {
+        List<BookingDTO> bookings = bookingService.getUpcomingBookingsByLenderId(lenderId);
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(
+            summary = "Get active rentals for lender",
+            description = "Returns items currently with the student. Sorted by return date."
+    )
+    @GetMapping("/{lenderId}/active")
+    public ResponseEntity<List<BookingDTO>> getLenderActive(
+            @Parameter(description = "ID of the lender") @PathVariable Long lenderId
+    ) {
+        List<BookingDTO> bookings = bookingService.getActiveBookingsByLenderId(lenderId);
+        return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(
+            summary = "Get overdue rentals for lender",
+            description = "Returns items that are currently rented but past their return date."
+    )
+    @GetMapping("/{lenderId}/overdue")
+    public ResponseEntity<List<BookingDTO>> getLenderOverdue(
+            @Parameter(description = "ID of the lender") @PathVariable Long lenderId
+    ) {
+        List<BookingDTO> bookings = bookingService.getOverdueBookingsByLenderId(lenderId);
+        return ResponseEntity.ok(bookings);
+    }
 }

@@ -14,6 +14,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import com.hse.leihsy.model.dto.BookingDTO;
+import com.hse.leihsy.service.BookingService;
+import org.springframework.web.bind.annotation.RequestParam;
+import io.swagger.v3.oas.annotations.Parameter;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,9 +28,11 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final BookingService bookingService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, BookingService bookingService) {
         this.userService = userService;
+        this.bookingService = bookingService;
     }
 
     /**
@@ -65,6 +71,41 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
+        UserDTO dto = convertToDTO(user, List.of());
+        return ResponseEntity.ok(dto);
+    }
+
+    @Operation(
+            summary = "Get bookings of a user",
+            description = "Returns all bookings for a specific user. Admins can view any user, users can only view their own bookings."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @GetMapping("/{userId}/bookings")
+    public ResponseEntity<List<BookingDTO>> getUserBookings(
+            @Parameter(description = "ID of the user") @PathVariable Long userId,
+            @Parameter(description = "Include soft-deleted bookings (admin only)")
+            @RequestParam(required = false, defaultValue = "false") boolean deleted
+    ) {
+        List<BookingDTO> bookings = bookingService.getBookingsByUserId(userId, deleted);
+        return ResponseEntity.ok(bookings);
+    }
+
+    /**
+     * Gibt einen User anhand seines Benutzernamens (name) zurueck (nur fuer Admins)
+     */
+    @Operation(summary = "User per Benutzername abrufen",
+            description = "Gibt einen User anhand seines Benutzernamens zurueck")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User gefunden",
+                    content = @Content(schema = @Schema(implementation = UserDTO.class))),
+            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
+    })
+    @GetMapping("/names/{name}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String name) {
+        User user = userService.getUserByName(name);
         UserDTO dto = convertToDTO(user, List.of());
         return ResponseEntity.ok(dto);
     }

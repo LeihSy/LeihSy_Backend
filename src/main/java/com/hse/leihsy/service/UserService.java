@@ -59,6 +59,14 @@ public class UserService {
     }
 
     /**
+     * Holt User anhand des Namens
+     */
+    public User getUserByName(String name) {
+        return userRepository.findByName(name)
+                .orElseThrow(() -> new RuntimeException("User not found with name: " + name));
+    }
+
+    /**
      * Holt den aktuell eingeloggten User aus dem JWT Token
      * @return Current User
      */

@@ -25,6 +25,7 @@ public interface BookingMapper {
     @Mapping(target = "proposalByName", source = "proposalBy.name")
     @Mapping(target = "urgent", ignore = true) // Wird im AfterMapping berechnet
     @Mapping(target = "overdue", ignore = true) // Ignorieren während main mapping
+    @Mapping(target = "status", expression = "java(booking.calculateStatus().name())")
     BookingDTO toDTO(Booking booking);
 
     List<BookingDTO> toDTOList(List<Booking> bookings);

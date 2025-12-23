@@ -28,6 +28,10 @@ public class ItemService {
         return itemRepository.findAllActive();
     }
 
+    public List<Item> getAllDeletedItems() {
+        return itemRepository.findAllDeleted();
+    }
+
     public Item getItemById(Long id) {
         return itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + id));
@@ -38,7 +42,7 @@ public class ItemService {
                 .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + invNumber));
     }
 
-    public List<Item> getItemsByProduct(Long productId) {
+    public List<Item> getItemsByProductId(Long productId) {
         return itemRepository.findByProductId(productId);
     }
 

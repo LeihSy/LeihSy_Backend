@@ -22,4 +22,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return true wenn User existiert
      */
     boolean existsByUniqueId(String uniqueId);
+
+    /**
+     * Findet User anhand des Namens
+     * @param name Der Benutzername
+     * @return Optional<User>
+     */
+    Optional<User> findByName(String name);
 }

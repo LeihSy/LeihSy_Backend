@@ -46,6 +46,7 @@ public class SecurityConfig {
 
                         // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui.html/**", "/v3/api-docs/**").permitAll()
 
                         // Bilder oeffentlich zugaenglich (fuer Katalog-Ansicht)
                         .requestMatchers("/api/images/**").permitAll()

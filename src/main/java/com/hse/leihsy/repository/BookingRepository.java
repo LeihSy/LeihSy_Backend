@@ -181,4 +181,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Alle aktiven Bookings (ohne gelöschte)
     @Query("SELECT b FROM Booking b WHERE b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     List<Booking> findAllActive();
+
+    @Query("SELECT b FROM Booking b WHERE b.studentGroup.id = :groupId AND b.deletedAt IS NULL")
+    List<Booking> findByStudentGroupId(@Param("groupId") Long groupId);
 }

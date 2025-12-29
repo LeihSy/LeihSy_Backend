@@ -26,6 +26,9 @@ public interface BookingMapper {
     @Mapping(target = "urgent", ignore = true) // Wird im AfterMapping berechnet
     @Mapping(target = "overdue", ignore = true) // Ignorieren während main mapping
     @Mapping(target = "status", expression = "java(booking.calculateStatus().name())")
+    @Mapping(source = "studentGroup.id", target = "groupId")
+    @Mapping(source = "studentGroup.name", target = "groupName")
+    @Mapping(target = "groupMemberNames", expression = "java(mapGroupMemberNames(entity.getStudentGroup()))")
     BookingDTO toDTO(Booking booking);
 
     List<BookingDTO> toDTOList(List<Booking> bookings);
@@ -35,7 +38,6 @@ public interface BookingMapper {
     default void calculateComputedFields(Booking booking, @MappingTarget BookingDTO dto) {
         LocalDateTime now = LocalDateTime.now();
 
-        // --- 1. DRINGLICHKEITSLOGIK ---
         // Dringend, wenn vor mehr als 20 Stunden erstellt und noch PENDING
         if (booking.getCreatedAt() != null) {
             LocalDateTime limit20h = booking.getCreatedAt().plusHours(20);
@@ -47,7 +49,6 @@ public interface BookingMapper {
             }
         }
 
-            // --- 2. ÜBERFÄLLIG-LOGIK ---
             // Überfällig, wenn: Element den Status PICKED_UP (aktiv) hat UND das Enddatum in der Vergangenheit liegt
         boolean isActive = booking.getDistributionDate() != null && booking.getReturnDate() == null;
 
@@ -57,5 +58,14 @@ public interface BookingMapper {
         else {
             dto.setOverdue(false);
         }
+    }
+
+    default List<String> mapGroupMemberNames(com.hse.leihsy.model.entity.StudentGroup group) {
+        if (group == null || group.getMembers() == null) {
+            return null;
+        }
+        return group.getMembers().stream()
+                .map(com.hse.leihsy.model.entity.User::getName)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

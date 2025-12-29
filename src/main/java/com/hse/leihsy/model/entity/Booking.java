@@ -93,6 +93,14 @@ public class Booking extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
+    /**
+     * Optionale Zuordnung zu einer Studentengruppe
+     * NULL = Einzelbuchung, sonst = Gruppenbuchung
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private StudentGroup studentGroup;
+
     // Constructors
 
     public Booking() {
@@ -155,6 +163,21 @@ public class Booking extends BaseEntity {
     }
 
     // Getters and Setters
+
+    public StudentGroup getStudentGroup() {
+        return studentGroup;
+    }
+
+    public void setStudentGroup(StudentGroup studentGroup) {
+        this.studentGroup = studentGroup;
+    }
+
+    /**
+     * Prueft ob diese Buchung zu einer Gruppe gehoert
+     */
+    public boolean isGroupBooking() {
+        return studentGroup != null;
+    }
 
     public String getMessage() {
         return message;

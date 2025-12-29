@@ -28,7 +28,7 @@ public interface BookingMapper {
     @Mapping(target = "status", expression = "java(booking.calculateStatus().name())")
     @Mapping(source = "studentGroup.id", target = "groupId")
     @Mapping(source = "studentGroup.name", target = "groupName")
-    @Mapping(target = "groupMemberNames", expression = "java(mapGroupMemberNames(entity.getStudentGroup()))")
+    @Mapping(target = "groupMemberNames", expression = "java(mapGroupMemberNames(booking.getStudentGroup()))")
     BookingDTO toDTO(Booking booking);
 
     List<BookingDTO> toDTOList(List<Booking> bookings);

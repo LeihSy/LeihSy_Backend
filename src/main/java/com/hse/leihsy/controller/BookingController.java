@@ -12,12 +12,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,7 +41,7 @@ public class BookingController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "400", description = "Ungültiger Status-Parameter"),
+            @ApiResponse(responseCode = "400", description = "Ungueltiger Status-Parameter"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
     @GetMapping
@@ -72,13 +72,28 @@ public class BookingController {
         return ResponseEntity.ok(booking);
     }
 
+    @Operation(
+            summary = "Buchungen einer Gruppe abrufen",
+            description = "Holt alle Buchungen einer Studentengruppe"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Buchungen gefunden"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+    })
+    @GetMapping("/groups/{groupId}")
+    public ResponseEntity<List<BookingDTO>> getBookingsByGroupId(
+            @Parameter(description = "ID der Studentengruppe") @PathVariable Long groupId) {
+        List<BookingDTO> bookings = bookingService.getBookingsByGroupId(groupId);
+        return ResponseEntity.ok(bookings);
+    }
+
     // ========================================
     // POST ENDPOINT - Buchung erstellen
     // ========================================
 
     @Operation(
             summary = "Neue Buchung erstellen",
-            description = "Erstellt eine neue Buchungsanfrage für ein Item"
+            description = "Erstellt eine neue Buchungsanfrage fuer ein Item. Optional kann eine Gruppen-ID angegeben werden fuer Gruppenbuchungen."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -86,9 +101,9 @@ public class BookingController {
                     description = "Buchung erfolgreich erstellt",
                     content = @Content(schema = @Schema(implementation = BookingDTO.class))
             ),
-            @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+            @ApiResponse(responseCode = "400", description = "Ungueltige Anfrage oder User nicht Mitglied der Gruppe"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "404", description = "Item nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "Item oder Gruppe nicht gefunden")
     })
     @PostMapping
     public ResponseEntity<BookingDTO> createBooking(@RequestBody CreateBookingRequest request) {
@@ -99,7 +114,8 @@ public class BookingController {
                 request.getItemId(),
                 request.getStartDate(),
                 request.getEndDate(),
-                request.getMessage()
+                request.getMessage(),
+                request.getGroupId()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(booking);
@@ -111,11 +127,11 @@ public class BookingController {
 
     @Operation(
             summary = "Booking-Status aktualisieren",
-            description = "Generischer Endpoint für alle Booking-Status-Updates. Unterstützt Actions: confirm, select_pickup, propose, pickup, return"
+            description = "Generischer Endpoint fuer alle Booking-Status-Updates. Unterstuetzt Actions: confirm, select_pickup, propose, pickup, return"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Status erfolgreich aktualisiert"),
-            @ApiResponse(responseCode = "400", description = "Ungültige Anfrage oder Action"),
+            @ApiResponse(responseCode = "400", description = "Ungueltige Anfrage oder Action"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
             @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
@@ -137,8 +153,8 @@ public class BookingController {
             description = "Verleiher lehnt Buchung ab (reject) oder Student/Admin storniert (cancel). Beide Aktionen setzen deletedAt (Soft-Delete)."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Buchung erfolgreich gelöscht"),
-            @ApiResponse(responseCode = "400", description = "Löschen nicht möglich"),
+            @ApiResponse(responseCode = "204", description = "Buchung erfolgreich geloescht"),
+            @ApiResponse(responseCode = "400", description = "Loeschen nicht moeglich"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
             @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
@@ -157,16 +173,19 @@ public class BookingController {
     @Getter
     @Setter
     public static class CreateBookingRequest {
-        @Schema(description = "ID des Items", example = "1")
+        @Schema(description = "ID des Items", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
         private Long itemId;
 
-        @Schema(description = "Gewünschter Ausleihbeginn", example = "2025-12-10T09:00:00")
+        @Schema(description = "Gewuenschter Ausleihbeginn", example = "2025-12-10T09:00:00", requiredMode = Schema.RequiredMode.REQUIRED)
         private LocalDateTime startDate;
 
-        @Schema(description = "Gewünschtes Ausleihende", example = "2025-12-15T17:00:00")
+        @Schema(description = "Gewuenschtes Ausleihende", example = "2025-12-15T17:00:00", requiredMode = Schema.RequiredMode.REQUIRED)
         private LocalDateTime endDate;
 
-        @Schema(description = "Optionale Nachricht an den Verleiher", example = "Brauche es für Projekt")
+        @Schema(description = "Optionale Nachricht an den Verleiher", example = "Brauche es fuer Projekt")
         private String message;
+
+        @Schema(description = "Optionale Gruppen-ID fuer Gruppenbuchungen. NULL = Einzelbuchung", example = "5")
+        private Long groupId;
     }
 }

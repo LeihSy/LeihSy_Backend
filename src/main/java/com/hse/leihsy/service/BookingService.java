@@ -6,17 +6,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.dto.BookingStatusUpdateDTO;
-import com.hse.leihsy.model.entity.Booking;
-import com.hse.leihsy.model.entity.BookingStatus;
-import com.hse.leihsy.model.entity.Item;
-import com.hse.leihsy.model.entity.User;
+import com.hse.leihsy.model.entity.*;
 import com.hse.leihsy.repository.BookingRepository;
 import com.hse.leihsy.repository.ItemRepository;
+import com.hse.leihsy.repository.StudentGroupRepository;
 import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +27,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final StudentGroupRepository studentGroupRepository;
     private final ObjectMapper objectMapper;
     private final BookingMapper bookingMapper;
     private final UserService userService;
@@ -77,7 +76,7 @@ public class BookingService {
     }
 
     /**
-     * Holt alle gelöschten/stornierten Bookings eines Users als DTOs (als Student/Entleiher)
+     * Holt alle geloeschten/stornierten Bookings eines Users als DTOs
      */
     public List<BookingDTO> getDeletedBookingsByUserId(Long userId) {
         List<Booking> bookings = bookingRepository.findDeletedByUserId(userId);
@@ -116,7 +115,7 @@ public class BookingService {
     }
 
     /**
-     * Holt alle überfälligen Bookings als DTOs
+     * Holt alle ueberfaelligen Bookings als DTOs
      */
     public List<BookingDTO> getOverdueBookings() {
         List<Booking> bookings = bookingRepository.findOverdue(LocalDateTime.now());
@@ -136,10 +135,8 @@ public class BookingService {
         LocalDateTime threshold24h = now.minusHours(24);
 
         if (status == null || status.isBlank()) {
-            // Alle Bookings (ohne gelöschte)
             bookings = bookingRepository.findAllActive();
         } else {
-            // Nach Status filtern mit spezifischen Queries
             bookings = switch (status.toLowerCase()) {
                 case "overdue" -> bookingRepository.findOverdue(now);
                 case "pending" -> bookingRepository.findAllPending(threshold24h);
@@ -158,7 +155,7 @@ public class BookingService {
     }
 
     /**
-     * Holt bestätigte, aber noch nicht abgeholte Buchungen (Zukünftig)
+     * Holt bestaetigte, aber noch nicht abgeholte Buchungen (Zukuenftig)
      */
     public List<BookingDTO> getUpcomingBookingsByLenderId(Long lenderId) {
         List<Booking> bookings = bookingRepository.findUpcomingByLenderId(lenderId);
@@ -166,8 +163,8 @@ public class BookingService {
     }
 
     /**
-     * Holt aktuell ausgeliehene Gegenstände (Aktiv)
-     * Sortiert nach Rückgabedatum, damit überfällige oben stehen.
+     * Holt aktuell ausgeliehene Gegenstaende (Aktiv)
+     * Sortiert nach Rueckgabedatum, damit ueberfaellige oben stehen.
      */
     public List<BookingDTO> getActiveBookingsByLenderId(Long lenderId) {
         List<Booking> bookings = bookingRepository.findActiveByLenderId(lenderId);
@@ -175,15 +172,23 @@ public class BookingService {
     }
 
     /**
-     * Holt nur die überfälligen Buchungen für einen Verleiher
+     * Holt nur die ueberfaelligen Buchungen fuer einen Verleiher
      */
     public List<BookingDTO> getOverdueBookingsByLenderId(Long lenderId) {
         List<Booking> bookings = bookingRepository.findOverdueByLenderId(lenderId, LocalDateTime.now());
         return bookingMapper.toDTOList(bookings);
     }
 
+    /**
+     * Holt alle Bookings einer Studentengruppe
+     */
+    public List<BookingDTO> getBookingsByGroupId(Long groupId) {
+        List<Booking> bookings = bookingRepository.findByStudentGroupId(groupId);
+        return bookingMapper.toDTOList(bookings);
+    }
+
     // ========================================
-    // GET METHODEN - ENTITIES (für interne Nutzung)
+    // GET METHODEN - ENTITIES (fuer interne Nutzung)
     // ========================================
 
     /**
@@ -195,32 +200,42 @@ public class BookingService {
     }
 
     // ========================================
-    // CREATE METHODE
+    // CREATE METHODEN
     // ========================================
 
     /**
-     * Erstellt eine neue Booking und gibt DTO zurück
+     * Erstellt eine neue Booking (Einzelbuchung, Rueckwaertskompatibilitaet)
      */
     @Transactional
     public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
                                     LocalDateTime endDate, String message) {
+        return createBooking(userId, itemId, startDate, endDate, message, null);
+    }
 
-        // Prüfe ob Item existiert und verfügbar ist
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
+    /**
+     * Erstellt eine neue Booking mit optionaler Gruppenzuordnung
+     */
+    @Transactional
+    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
+                                    LocalDateTime endDate, String message, Long groupId) {
 
-        // Prüfe ob User existiert
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Prüfe Verfügbarkeit (keine überlappenden Bookings)
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        // Verfuegbarkeitspruefung
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(itemId, startDate, endDate);
         if (!overlapping.isEmpty()) {
             throw new RuntimeException("Item is not available for the requested period");
         }
 
-        // Hole Verleiher
+        // Verleiher aus Item holen
         User lender = item.getLender();
+        if (lender == null && item.getProduct() != null) {
+            lender = item.getLender();
+        }
         if (lender == null) {
             throw new RuntimeException("No lender assigned to this product");
         }
@@ -233,6 +248,22 @@ public class BookingService {
         booking.setStartDate(startDate);
         booking.setEndDate(endDate);
         booking.setMessage(message);
+        booking.setStatus(BookingStatus.PENDING.name());
+
+        // Gruppenzuordnung falls angegeben
+        if (groupId != null) {
+            StudentGroup group = studentGroupRepository.findActiveById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+
+            // Pruefen ob User Mitglied der Gruppe ist
+            if (!group.isMember(user)) {
+                throw new RuntimeException("User is not a member of the specified group");
+            }
+
+            booking.setStudentGroup(group);
+            log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
+                    user.getName(), group.getName(), item.getInvNumber());
+        }
 
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);
@@ -243,7 +274,7 @@ public class BookingService {
     // ========================================
 
     /**
-     * Verleiher bestätigt Booking und schlägt Abholtermine vor
+     * Verleiher bestaetigt Booking und schlaegt Abholtermine vor
      */
     @Transactional
     public BookingDTO confirmBooking(Long id, List<LocalDateTime> proposedPickups) {
@@ -264,7 +295,7 @@ public class BookingService {
     }
 
     /**
-     * Student wählt einen der vorgeschlagenen Abholtermine aus
+     * Student waehlt einen der vorgeschlagenen Abholtermine aus
      */
     @Transactional
     public BookingDTO selectPickupTime(Long id, LocalDateTime selectedPickup) {
@@ -323,7 +354,7 @@ public class BookingService {
     }
 
     /**
-     * Verleiher dokumentiert Rückgabe
+     * Verleiher dokumentiert Rueckgabe
      */
     @Transactional
     public BookingDTO recordReturn(Long id) {
@@ -334,20 +365,20 @@ public class BookingService {
         }
 
         if (booking.getReturnDate() != null) {
-            throw new RuntimeException("Artikel wurde bereits zurückgegeben.");
+            throw new RuntimeException("Artikel wurde bereits zurueckgegeben.");
         }
 
         booking.setReturnDate(LocalDateTime.now());
-        log.info("Rückgabe dokumentiert: Buchung ID {}, Item {}, User {}",
+        log.info("Rueckgabe dokumentiert: Buchung ID {}, Item {}, User {}",
                 id, booking.getItem().getInvNumber(), booking.getUser().getUniqueId());
         Booking saved = bookingRepository.save(booking);
         return bookingMapper.toDTO(saved);
     }
 
     /**
-     * Generische Methode für alle Status-Updates via PATCH-Endpoint
+     * Generische Methode fuer alle Status-Updates via PATCH-Endpoint
      *
-     * @param id Booking ID
+     * @param id        Booking ID
      * @param updateDTO DTO mit action und optionalen Parametern
      * @return Aktualisierte Booking als DTO
      */
@@ -390,7 +421,7 @@ public class BookingService {
     }
 
     /**
-     * Student oder Admin storniert Booking (auch für Verleiher-Reject)
+     * Student oder Admin storniert Booking (auch fuer Verleiher-Reject)
      */
     @Transactional
     public void cancelBooking(Long id) {
@@ -422,7 +453,8 @@ public class BookingService {
             return List.of();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<List<LocalDateTime>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<LocalDateTime>>() {
+            });
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse pickups from JSON", e);
         }

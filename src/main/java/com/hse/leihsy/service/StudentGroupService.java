@@ -77,6 +77,14 @@ public class StudentGroupService {
         return enrichWithBookingCounts(groupMapper.toDTOList(groups));
     }
 
+    /**
+     * Holt alle Gruppen in denen ein bestimmter User Mitglied ist
+     */
+    public List<StudentGroupDTO> getGroupsByUserId(Long userId) {
+        List<StudentGroup> groups = groupRepository.findByMemberId(userId);
+        return enrichWithBookingCounts(groupMapper.toDTOList(groups));
+    }
+
     // ========================================
     // CREATE METHODE
     // ========================================

@@ -49,20 +49,6 @@ public class StudentGroupController {
     }
 
     @Operation(
-            summary = "Meine Gruppen abrufen",
-            description = "Holt alle Gruppen in denen der aktuelle User Mitglied ist"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
-    })
-    @GetMapping("/me")
-    public ResponseEntity<List<StudentGroupDTO>> getMyGroups() {
-        List<StudentGroupDTO> groups = groupService.getMyGroups();
-        return ResponseEntity.ok(groups);
-    }
-
-    @Operation(
             summary = "Gruppe per ID abrufen",
             description = "Holt eine spezifische Gruppe anhand ihrer ID"
     )
@@ -79,17 +65,24 @@ public class StudentGroupController {
     }
 
     @Operation(
-            summary = "Gruppen suchen",
-            description = "Sucht Gruppen nach Name (Teilstring-Suche)"
+            summary = "Alle Gruppen abrufen oder suchen",
+            description = "Gibt alle aktiven Gruppen zurück. Mit Query-Parameter 'q' kann nach Namen gesucht werden."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich gesucht"),
+            @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
-    @GetMapping("/search")
-    public ResponseEntity<List<StudentGroupDTO>> searchGroups(
-            @Parameter(description = "Suchbegriff für Gruppenname") @RequestParam String q) {
-        List<StudentGroupDTO> groups = groupService.searchGroups(q);
+    @GetMapping
+    public ResponseEntity<List<StudentGroupDTO>> getAllGroups(
+            @Parameter(description = "Suchbegriff für Gruppenname (optional)")
+            @RequestParam(required = false) String q) {
+
+        List<StudentGroupDTO> groups;
+        if (q != null && !q.isBlank()) {
+            groups = groupService.searchGroups(q);
+        } else {
+            groups = groupService.getAllGroups();
+        }
         return ResponseEntity.ok(groups);
     }
 

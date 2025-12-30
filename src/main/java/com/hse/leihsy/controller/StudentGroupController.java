@@ -35,20 +35,6 @@ public class StudentGroupController {
     // ========================================
 
     @Operation(
-            summary = "Alle Gruppen abrufen",
-            description = "Holt alle aktiven Studentengruppen (Admin-Funktion)"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
-    })
-    @GetMapping
-    public ResponseEntity<List<StudentGroupDTO>> getAllGroups() {
-        List<StudentGroupDTO> groups = groupService.getAllGroups();
-        return ResponseEntity.ok(groups);
-    }
-
-    @Operation(
             summary = "Gruppe per ID abrufen",
             description = "Holt eine spezifische Gruppe anhand ihrer ID"
     )

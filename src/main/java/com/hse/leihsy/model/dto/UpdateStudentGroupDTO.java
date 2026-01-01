@@ -1,11 +1,14 @@
 package com.hse.leihsy.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 /**
  * DTO für das Aktualisieren einer StudentGroup
@@ -25,4 +28,8 @@ public class UpdateStudentGroupDTO {
     @Size(max = 1000, message = "Beschreibung darf maximal 1000 Zeichen lang sein")
     @Schema(description = "Neue Beschreibung der Gruppe (optional)", example = "Aktualisierte Beschreibung")
     private String description;
+
+    @DecimalMin(value = "0.0", message = "Budget muss mindestens 0 sein")
+    @Schema(description = "Budget der Gruppe (optional)", example = "5000.00")
+    private BigDecimal budget;
 }

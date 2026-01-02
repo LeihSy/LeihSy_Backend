@@ -193,31 +193,38 @@ public class InsyImportController {
     // PRIVATE HELPER - Mock Data Generation
     // ========================================
 
+    /**
+     * Generiert Mock-Daten mit FESTEN InSy-IDs
+     *
+     * InSy-IDs 900001-900010 sind reserviert fuer Mock-Daten.
+     * Bei erneutem Aufruf werden existierende PENDING Items aktualisiert statt dupliziert.
+     */
     private List<InsyImportPushDTO> generateMockItems(int count) {
-        String[][] mockData = {
-                {"Meta Quest 3", "VR-Brille mit Touch-Controllern, 128GB", "F01.402", "Christian Haas", "VR"},
-                {"Meta Quest Pro", "High-End VR-Brille fuer professionelle Anwendungen", "F01.402", "Christian Haas", "VR"},
-                {"Sony A7 IV", "Vollformat-Kamera, 33 Megapixel", "F01.310", "Christian Haas", "CAM"},
-                {"Canon EOS R6 Mark II", "Spiegellose Vollformatkamera", "F01.310", "Christian Haas", "CAM"},
-                {"DJI Mavic 3", "Drohne mit Hasselblad-Kamera", "F01.402", "IT-Labor", "DRONE"},
-                {"MacBook Pro 16", "Apple M3 Pro, 36GB RAM", "F01.201", "IT-Labor", "MAC"},
-                {"Rode NT1", "Kondensatormikrofon fuer Studioaufnahmen", "F01.310", "Christian Haas", "MIC"},
-                {"Zoom H6", "Mobiler Audio-Recorder, 6 Kanaele", "F01.310", "Christian Haas", "REC"},
-                {"Valve Index", "VR-Headset mit Knuckles-Controllern", "F01.402", "Christian Haas", "VR"},
-                {"Insta360 X3", "360-Grad Kamera", "F01.310", "Christian Haas", "CAM"}
+        // Mock-Daten: [Name, Description, Location, Owner, InvPrefix, FESTE InSy-ID]
+        Object[][] mockData = {
+                {"Meta Quest 3", "VR-Brille mit Touch-Controllern, 128GB", "F01.402", "Christian Haas", "VR", 900001L},
+                {"Meta Quest Pro", "High-End VR-Brille fuer professionelle Anwendungen", "F01.402", "Christian Haas", "VR", 900002L},
+                {"Sony A7 IV", "Vollformat-Kamera, 33 Megapixel", "F01.310", "Christian Haas", "CAM", 900003L},
+                {"Canon EOS R6 Mark II", "Spiegellose Vollformatkamera", "F01.310", "Christian Haas", "CAM", 900004L},
+                {"DJI Mavic 3", "Drohne mit Hasselblad-Kamera", "F01.402", "IT-Labor", "DRONE", 900005L},
+                {"MacBook Pro 16", "Apple M3 Pro, 36GB RAM", "F01.201", "IT-Labor", "MAC", 900006L},
+                {"Rode NT1", "Kondensatormikrofon fuer Studioaufnahmen", "F01.310", "Christian Haas", "MIC", 900007L},
+                {"Zoom H6", "Mobiler Audio-Recorder, 6 Kanaele", "F01.310", "Christian Haas", "REC", 900008L},
+                {"Valve Index", "VR-Headset mit Knuckles-Controllern", "F01.402", "Christian Haas", "VR", 900009L},
+                {"Insta360 X3", "360-Grad Kamera", "F01.310", "Christian Haas", "CAM", 900010L}
         };
 
         List<InsyImportPushDTO> items = new java.util.ArrayList<>();
-        long baseInsyId = System.currentTimeMillis();
 
         for (int i = 0; i < count && i < mockData.length; i++) {
-            String[] data = mockData[i];
+            Object[] data = mockData[i];
+
             items.add(InsyImportPushDTO.builder()
-                    .insyId(baseInsyId + i)
-                    .name(data[0])
-                    .description(data[1])
-                    .location(data[2])
-                    .owner(data[3])
+                    .insyId((Long) data[5])
+                    .name((String) data[0])
+                    .description((String) data[1])
+                    .location((String) data[2])
+                    .owner((String) data[3])
                     .invNumber(data[4] + "-" + String.format("%03d", i + 1))
                     .build());
         }

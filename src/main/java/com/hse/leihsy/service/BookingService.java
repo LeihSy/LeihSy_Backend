@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +34,11 @@ public class BookingService {
     private final ObjectMapper objectMapper;
     private final BookingMapper bookingMapper;
     private final UserService userService;
+    private final EmailService emailService;
+
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     // ========================================
     // GET METHODEN - MIT DTOs
@@ -404,6 +411,78 @@ public class BookingService {
         booking.setDeletedAt(LocalDateTime.now());
         bookingRepository.save(booking);
     }
+
+
+    // ========================================
+    // ABHOL-TOKEN / E-MAIL-ABLAUF
+    // ========================================
+
+    /**
+     * Der Verleiher löst die E-Mail aus.
+     * Erzeugt ein Token und sendet eine E-Mail an den Studenten.
+     */
+    @Transactional
+    public void initiatePickupProcess(Long bookingId) {
+        Booking booking = getBookingById(bookingId);
+
+        // Buchung muss BESTÄTIGT sein
+        if (booking.calculateStatus() != BookingStatus.CONFIRMED) {
+            throw new RuntimeException("Abholung kann nur für bestätigte Buchungen gestartet werden.");
+        }
+
+        // Token erzeugen
+        String token = UUID.randomUUID().toString();
+
+        // Ablaufzeit setzen (15 Min)
+        booking.setPickupToken(token);
+        booking.setPickupTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        bookingRepository.save(booking);
+
+        // Link erzeugen + E-Mail senden
+        String link = baseUrl + "/api/bookings/verify-pickup?token=" + token;
+
+        System.out.println("==========================================");
+        System.out.println("DEBUG - GENERATED TOKEN: " + token);
+        System.out.println("DEBUG - CLICK THIS LINK: " + link);
+        System.out.println("==========================================");
+
+        // Falls User noch kein email-Feld hat
+        String userEmail = "dev.email@hs-eslingen.de";
+        emailService.sendPickupConfirmation(userEmail, link);
+    }
+
+    /**
+     * Benutzer klickt auf den Link.
+     * Validiert das Token und führt die Abholung durch.
+     */
+    @Transactional
+    public BookingDTO verifyPickupToken(String token) {
+
+        //  finde Buchung anhand des Tokens
+        Booking booking = bookingRepository.findByPickupToken(token)
+                .orElseThrow(() -> new RuntimeException("Ungültiger oder abgelaufener Token."));
+
+        // Gültigkeitsprüfung
+        if (booking.getPickupTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token ist abgelaufen. Bitte Verleiher um neuen Link bitten.");
+        }
+
+        // Bereits abgeholt?
+        if (booking.getDistributionDate() != null) {
+            throw new RuntimeException("Artikel wurde bereits abgeholt.");
+        }
+
+        // Abholung durchführen
+        booking.setDistributionDate(LocalDateTime.now());
+
+        // Token zurücksetzen
+        booking.setPickupToken(null);
+        booking.setPickupTokenExpiry(null);
+
+        Booking saved = bookingRepository.save(booking);
+        return bookingMapper.toDTO(saved);
+    }
+
 
     // ========================================
     // HELPER METHODEN (JSON KONVERTIERUNG)

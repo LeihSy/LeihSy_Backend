@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -181,4 +182,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Alle aktiven Bookings (ohne gelöschte)
     @Query("SELECT b FROM Booking b WHERE b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     List<Booking> findAllActive();
+
+    // Findet eine Buchung anhand des Sicherheits-Tokens
+    Optional<Booking> findByPickupToken(String token);
 }

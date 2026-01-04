@@ -2,6 +2,7 @@ package com.hse.leihsy.model.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.*;
 
 /**
  * Booking Entity - Ausleih-Anfrage und Buchung
@@ -12,6 +13,11 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "bookings")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Booking extends BaseEntity {
 
     /**
@@ -59,6 +65,18 @@ public class Booking extends BaseEntity {
     private LocalDateTime confirmedPickup;
 
     /**
+     * Sicherheits-Token zur Abholbestätigung
+     */
+    @Column(name = "pickup_token")
+    private String pickupToken;
+
+    /**
+     * Ablaufzeitpunkt des Abhol-Tokens
+     */
+    @Column(name = "pickup_token_expiry")
+    private LocalDateTime pickupTokenExpiry;
+
+    /**
      * Tatsächliche Ausgabe (wann wurde das Item übergeben)
      */
     @Column(name = "distribution_date")
@@ -93,10 +111,6 @@ public class Booking extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
-    // Constructors
-
-    public Booking() {
-    }
 
     public Booking(User user, Item item, LocalDateTime startDate, LocalDateTime endDate) {
         this.user = user;
@@ -154,101 +168,4 @@ public class Booking extends BaseEntity {
         this.status = calculateStatus().name();
     }
 
-    // Getters and Setters
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public String getProposedPickups() {
-        return proposedPickups;
-    }
-
-    public void setProposedPickups(String proposedPickups) {
-        this.proposedPickups = proposedPickups;
-    }
-
-    public User getProposalBy() {
-        return proposalBy;
-    }
-
-    public void setProposalBy(User proposalBy) {
-        this.proposalBy = proposalBy;
-    }
-
-    public LocalDateTime getConfirmedPickup() {
-        return confirmedPickup;
-    }
-
-    public void setConfirmedPickup(LocalDateTime confirmedPickup) {
-        this.confirmedPickup = confirmedPickup;
-    }
-
-    public LocalDateTime getDistributionDate() {
-        return distributionDate;
-    }
-
-    public void setDistributionDate(LocalDateTime distributionDate) {
-        this.distributionDate = distributionDate;
-    }
-
-    public LocalDateTime getReturnDate() {
-        return returnDate;
-    }
-
-    public void setReturnDate(LocalDateTime returnDate) {
-        this.returnDate = returnDate;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public User getLender() {
-        return lender;
-    }
-
-    public void setLender(User lender) {
-        this.lender = lender;
-    }
-
-    public Item getItem() {
-        return item;
-    }
-
-    public void setItem(Item item) {
-        this.item = item;
-    }
 }

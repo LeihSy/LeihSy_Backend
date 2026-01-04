@@ -169,4 +169,37 @@ public class BookingController {
         @Schema(description = "Optionale Nachricht an den Verleiher", example = "Brauche es für Projekt")
         private String message;
     }
+
+
+    // ========================================
+    // Email Confirmation Endpoints
+    // ========================================
+
+    @Operation(
+            description = "Wird vom Verleiher ausgelöst. Generiert einen Sicherheits-Token und sendet eine Bestätigungsmail an den Ausleiher."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email erfolgreich versendet"),
+            @ApiResponse(responseCode = "400", description = "Buchung nicht im Status CONFIRMED"),
+            @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
+    })
+    @PostMapping("/{id}/initiate-pickup")
+    public ResponseEntity<Void> initiatePickup(@Parameter(description = "ID der Buchung") @PathVariable Long id) {
+        bookingService.initiatePickupProcess(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            description = "Wird vom Ausleiher über den Link in der Email aufgerufen. Validiert den Token (gültig für 15 Min) und setzt den Status auf PICKED_UP."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Abholung erfolgreich bestätigt"),
+            @ApiResponse(responseCode = "400", description = "Ungültiger oder abgelaufener Token")
+    })
+    @GetMapping("/verify-pickup")
+    public ResponseEntity<String> verifyPickup(@RequestParam String token) {
+        bookingService.verifyPickupToken(token);
+        return ResponseEntity.ok("Abholung erfolgreich bestätigt.");
+    }
+
 }

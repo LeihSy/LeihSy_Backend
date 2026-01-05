@@ -1,5 +1,7 @@
 package com.hse.leihsy.controller;
 
+import com.hse.leihsy.model.dto.StudentGroupDTO;
+import com.hse.leihsy.service.StudentGroupService;
 import com.hse.leihsy.model.dto.UserDTO;
 import com.hse.leihsy.model.entity.User;
 import com.hse.leihsy.service.UserService;
@@ -29,10 +31,12 @@ public class UserController {
 
     private final UserService userService;
     private final BookingService bookingService;
+    private final StudentGroupService studentGroupService;
 
-    public UserController(UserService userService, BookingService bookingService) {
+    public UserController(UserService userService, BookingService bookingService, StudentGroupService studentGroupService) {
         this.userService = userService;
         this.bookingService = bookingService;
+        this.studentGroupService = studentGroupService;
     }
 
     /**
@@ -91,6 +95,22 @@ public class UserController {
     ) {
         List<BookingDTO> bookings = bookingService.getBookingsByUserId(userId, deleted);
         return ResponseEntity.ok(bookings);
+    }
+
+    @Operation(
+            summary = "Gruppen eines Users abrufen",
+            description = "Gibt alle Gruppen zurück, in denen der User Mitglied ist."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage"),
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
+    })
+    @GetMapping("/{userId}/groups")
+    public ResponseEntity<List<StudentGroupDTO>> getUserGroups(
+            @Parameter(description = "ID des Users") @PathVariable Long userId) {
+        List<StudentGroupDTO> groups = studentGroupService.getGroupsByUserId(userId);
+        return ResponseEntity.ok(groups);
     }
 
     /**

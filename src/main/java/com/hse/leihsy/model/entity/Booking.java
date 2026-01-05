@@ -1,6 +1,11 @@
 package com.hse.leihsy.model.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 /**
@@ -12,6 +17,10 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "bookings")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Booking extends BaseEntity {
 
     /**
@@ -21,25 +30,25 @@ public class Booking extends BaseEntity {
     private String message;
 
     /**
-     * Status-String (wird berechnet, aber auch gespeichert für einfache Queries)
+     * Status-String (wird berechnet, aber auch gespeichert fuer einfache Queries)
      */
     @Column(name = "status", length = 255)
     private String status;
 
     /**
-     * Gewünschter Ausleihbeginn
+     * Gewuenschter Ausleihbeginn
      */
     @Column(name = "start_date")
     private LocalDateTime startDate;
 
     /**
-     * Gewünschtes Ausleihende
+     * Gewuenschtes Ausleihende
      */
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
     /**
-     * Terminvorschläge als JSON-Array
+     * Terminvorschlaege als JSON-Array
      * Format: ["2025-12-01T10:00:00", "2025-12-01T14:00:00", "2025-12-02T09:00:00"]
      */
     @Column(name = "proposed_pickups", columnDefinition = "TEXT")
@@ -53,24 +62,26 @@ public class Booking extends BaseEntity {
     private User proposalBy;
 
     /**
-     * Finaler bestätigter Abholtermin
+     * Finaler bestaetigter Abholtermin
      */
     @Column(name = "confirmed_pickup")
     private LocalDateTime confirmedPickup;
 
     /**
-     * Tatsächliche Ausgabe (wann wurde das Item übergeben)
+     * Tatsaechliche Ausgabe (wann wurde das Item uebergeben)
      */
     @Column(name = "distribution_date")
     private LocalDateTime distributionDate;
 
     /**
-     * Tatsächliche Rückgabe
+     * Tatsaechliche Rueckgabe
      */
     @Column(name = "return_date")
     private LocalDateTime returnDate;
 
-    // Relationships
+    // ========================================
+    // RELATIONSHIPS
+    // ========================================
 
     /**
      * Entleiher (Student der ausleiht)
@@ -93,11 +104,17 @@ public class Booking extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
-    // Constructors
+    /**
+     * Optionale Zuordnung zu einer Studentengruppe
+     * NULL = Einzelbuchung, sonst = Gruppenbuchung
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private StudentGroup studentGroup;
 
-    public Booking() {
-    }
-
+    /**
+     * Konstruktor fuer neue Buchung mit automatischer Verleiher-Zuweisung
+     */
     public Booking(User user, Item item, LocalDateTime startDate, LocalDateTime endDate) {
         this.user = user;
         this.item = item;
@@ -115,31 +132,31 @@ public class Booking extends BaseEntity {
      * Berechnet den aktuellen Status basierend auf den Timestamp-Feldern.
      */
     public BookingStatus calculateStatus() {
-        // Gelöscht/Abgelehnt
+        // Geloescht/Abgelehnt
         if (getDeletedAt() != null) {
             return BookingStatus.REJECTED;
         }
 
-        // Zurückgegeben
+        // Zurueckgegeben
         if (returnDate != null) {
             return BookingStatus.RETURNED;
         }
 
-        // Ausgegeben (aber noch nicht zurück)
+        // Ausgegeben (aber noch nicht zurueck)
         if (distributionDate != null) {
             return BookingStatus.PICKED_UP;
         }
 
-        // Bestätigt (aber noch nicht abgeholt)
+        // Bestaetigt (aber noch nicht abgeholt)
         if (confirmedPickup != null) {
-            // Prüfen ob abgelaufen (24h nach confirmed_pickup)
+            // Pruefen ob abgelaufen (24h nach confirmed_pickup)
             if (LocalDateTime.now().isAfter(confirmedPickup.plusHours(24))) {
                 return BookingStatus.EXPIRED;
             }
             return BookingStatus.CONFIRMED;
         }
 
-        // Noch nicht bestätigt - prüfen ob automatisch storniert
+        // Noch nicht bestaetigt - pruefen ob automatisch storniert
         if (getCreatedAt() != null && LocalDateTime.now().isAfter(getCreatedAt().plusHours(24))) {
             return BookingStatus.CANCELLED;
         }
@@ -154,101 +171,10 @@ public class Booking extends BaseEntity {
         this.status = calculateStatus().name();
     }
 
-    // Getters and Setters
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public String getProposedPickups() {
-        return proposedPickups;
-    }
-
-    public void setProposedPickups(String proposedPickups) {
-        this.proposedPickups = proposedPickups;
-    }
-
-    public User getProposalBy() {
-        return proposalBy;
-    }
-
-    public void setProposalBy(User proposalBy) {
-        this.proposalBy = proposalBy;
-    }
-
-    public LocalDateTime getConfirmedPickup() {
-        return confirmedPickup;
-    }
-
-    public void setConfirmedPickup(LocalDateTime confirmedPickup) {
-        this.confirmedPickup = confirmedPickup;
-    }
-
-    public LocalDateTime getDistributionDate() {
-        return distributionDate;
-    }
-
-    public void setDistributionDate(LocalDateTime distributionDate) {
-        this.distributionDate = distributionDate;
-    }
-
-    public LocalDateTime getReturnDate() {
-        return returnDate;
-    }
-
-    public void setReturnDate(LocalDateTime returnDate) {
-        this.returnDate = returnDate;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public User getLender() {
-        return lender;
-    }
-
-    public void setLender(User lender) {
-        this.lender = lender;
-    }
-
-    public Item getItem() {
-        return item;
-    }
-
-    public void setItem(Item item) {
-        this.item = item;
+    /**
+     * Prueft ob diese Buchung zu einer Gruppe gehoert
+     */
+    public boolean isGroupBooking() {
+        return studentGroup != null;
     }
 }

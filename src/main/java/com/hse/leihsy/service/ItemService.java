@@ -1,8 +1,10 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.model.entity.Item;
 import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.model.entity.User;
+import com.hse.leihsy.repository.BookingRepository;
 import com.hse.leihsy.repository.ItemRepository;
 import com.hse.leihsy.repository.ProductRepository;
 import com.hse.leihsy.repository.UserRepository;
@@ -23,6 +25,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
 
     public List<Item> getAllItems() {
         return itemRepository.findAllActive();
@@ -141,5 +144,11 @@ public class ItemService {
     public boolean isItemAvailableForPeriod(Long itemId, LocalDateTime startDate, LocalDateTime endDate) {
         Item item = getItemById(itemId);
         return item.isAvailableForPeriod(startDate, endDate);
+    }
+
+    public List<Booking> getBookingsByItemId(Long itemId) {
+        // Prüfen, ob Item existiert
+        getItemById(itemId);
+        return bookingRepository.findByItemId(itemId);
     }
 }

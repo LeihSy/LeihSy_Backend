@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -36,5 +37,9 @@ public class BookingDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean urgent; // für Dringlichkeit (nahe der 24h Frist)
-    private boolean overdue; // Abgeholt – Rückgabedatum überschritten
+    private boolean overdue; // Abgeholt – Rueckgabedatum überschritten
+    // Gruppen-Infos (NULL wenn Einzelbuchung)
+    private Long groupId;
+    private String groupName;
+    private List<String> groupMemberNames; // Namen aller Gruppenmitglieder
 }

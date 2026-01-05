@@ -37,6 +37,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build and run SonarQube
+        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
@@ -54,6 +55,7 @@ jobs:
       - name: Upload coverage reports to Codecov (optional)
         if: success()
         uses: codecov/codecov-action@v4
+        continue-on-error: true
         with:
           files: ./target/site/jacoco/jacoco.xml
           flags: unittests

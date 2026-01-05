@@ -48,24 +48,6 @@ jobs:
           echo "Coverage = ${{ steps.jacoco.outputs.coverage }}"
           echo "Branch Coverage = ${{ steps.jacoco.outputs.branches }}"
 
-      - name: Upload coverage to SonarCloud
-        if: success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: >
-          mvn -B
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.projectKey=LeihSy_LeihSy
-          -Dsonar.organization=leihsy
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.sources=src/main/java
-          -Dsonar.tests=src/test/java
-          -Dsonar.test.inclusions=**/*Test.java,**/*Tests.java
-          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-          -Dsonar.java.coveragePlugin=jacoco
-          -Dsonar.exclusions=**/target/**,**/config/**,**/model/**,**/dto/**,**/entity/**
-
       - name: Upload JaCoCo coverage report as artifact
         if: always()
         uses: actions/upload-artifact@v4

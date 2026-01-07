@@ -1,7 +1,6 @@
 package com.hse.leihsy.controller;
 
 import com.hse.leihsy.model.dto.BookingDTO;
-import com.hse.leihsy.model.dto.CreateTransactionRequest;
 import com.hse.leihsy.model.dto.TransactionDTO;
 import com.hse.leihsy.service.BookingTransactionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,19 +18,16 @@ public class BookingTransactionController {
 
     private final BookingTransactionService transactionService;
 
-    @Operation(summary = "Token generieren (Nur Verleiher)",
-            description = "Erstellt einen temporären Token (15min) für Ausgabe (PICKUP) oder Rückgabe (RETURN).")
+    @Operation(summary = "Token generieren (Student)",
+            description = "Erstellt einen temporären Token (15min). Der Typ (PICKUP oder RETURN) wird automatisch anhand des Buchungsstatus ermittelt.")
     @PostMapping("/bookings/{bookingId}/transactions")
-    public ResponseEntity<TransactionDTO> generateToken(
-            @PathVariable Long bookingId,
-            @RequestBody CreateTransactionRequest request) {
-
-        TransactionDTO transaction = transactionService.generateToken(bookingId, request.getTransactionType());
+    public ResponseEntity<TransactionDTO> generateToken(@PathVariable Long bookingId) {
+        TransactionDTO transaction = transactionService.generateToken(bookingId);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
-    @Operation(summary = "Token einlösen (Student/Entleiher)",
-            description = "Löst den Token ein (setzt Status auf USED) und aktualisiert die Buchung.")
+    @Operation(summary = "Token einlösen (Verleiher)",
+            description = "Löst den Token ein (setzt Status auf USED) und aktualisiert die Buchung (CONFIRMED -> PICKED_UP oder PICKED_UP -> RETURNED).")
     @PatchMapping("/transactions/{token}")
     public ResponseEntity<BookingDTO> redeemToken(@PathVariable String token) {
         BookingDTO updatedBooking = transactionService.executeTransaction(token);

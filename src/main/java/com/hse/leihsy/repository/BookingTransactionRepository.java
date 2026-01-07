@@ -28,4 +28,12 @@ public interface BookingTransactionRepository extends JpaRepository<BookingTrans
             "AND t.usedAt IS NULL " +
             "AND t.deletedAt IS NULL")
     void invalidatePreviousTokens(@Param("bookingId") Long bookingId, @Param("type") TransactionType type);
+
+    // Sucht nach einem Token, der noch nicht abgelaufen, nicht benutzt und nicht gelöscht ist
+    @Query("SELECT t FROM BookingTransaction t WHERE t.booking.id = :bookingId " +
+            "AND t.transactionType = :type " +
+            "AND t.expiresAt > CURRENT_TIMESTAMP " +
+            "AND t.usedAt IS NULL " +
+            "AND t.deletedAt IS NULL")
+    Optional<BookingTransaction> findValidToken(@Param("bookingId") Long bookingId, @Param("type") TransactionType type);
 }

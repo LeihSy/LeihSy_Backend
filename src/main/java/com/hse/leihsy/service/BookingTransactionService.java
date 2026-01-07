@@ -128,12 +128,10 @@ public class BookingTransactionService {
         BookingStatus status = booking.calculateStatus();
 
         if (type == TransactionType.PICKUP) {
-            // Muss CONFIRMED sein
             if (status != BookingStatus.CONFIRMED) {
                 throw new RuntimeException("Cannot generate PICKUP token. Booking status is " + status);
             }
         } else if (type == TransactionType.RETURN) {
-            // Muss PICKED_UP sein
             if (status != BookingStatus.PICKED_UP) {
                 throw new RuntimeException("Cannot generate RETURN token. Booking status is " + status);
             }

@@ -31,7 +31,7 @@ public class DataInitializer {
             System.out.println("========================================\n");
 
             // ==========================================
-            // 1. Kategorien erstellen
+            // Kategorien erstellen
             // ==========================================
             Category catVR = new Category("VR-Equipment");
             Category catPhoto = new Category("Foto-Equipment");
@@ -46,7 +46,7 @@ public class DataInitializer {
             System.out.println(categoryRepo.count() + " Kategorien erstellt");
 
             // ==========================================
-            // 2. Locations erstellen
+            // Locations erstellen
             // ==========================================
             Location locKEIM = new Location("F01.402 (KEIM)");
             Location locBib = new Location("Bibliothek Flandernstrasse");
@@ -59,15 +59,18 @@ public class DataInitializer {
             System.out.println(locationRepo.count() + " Locations erstellt");
 
             // ==========================================
-            // 3. Test-User erstellen (Verleiher)
+            // Test-User erstellen (Verleiher)
             // ==========================================
             User verleiherChristian = new User("keycloak-id-christian", "Christian Haas");
+            verleiherChristian.setEmail("christian.haas.test@hs-esslinge.de");
             verleiherChristian.setBudget(BigDecimal.ZERO);
 
             User verleiherAndreas = new User("keycloak-id-andreas", "Andreas Heinrich");
+            verleiherAndreas.setEmail("andreas.heinrich.test@hs-esslinge.de");
             verleiherAndreas.setBudget(BigDecimal.ZERO);
 
             User studentMax = new User("keycloak-id-max", "Max Mustermann");
+            studentMax.setEmail("max.mustermann@hs-esslinge.de");
             studentMax.setBudget(new BigDecimal("100.00"));
 
             userRepo.save(verleiherChristian);
@@ -77,7 +80,7 @@ public class DataInitializer {
             System.out.println(userRepo.count() + " User erstellt");
 
             // ==========================================
-            // 4. Products erstellen
+            // Products erstellen
             // ==========================================
 
             // VR Products
@@ -147,7 +150,7 @@ public class DataInitializer {
             System.out.println(productRepo.count() + " Products erstellt");
 
             // ==========================================
-            // 5. Items erstellen (physische Exemplare)
+            // Items erstellen (physische Exemplare)
             // ==========================================
 
             // Meta Quest 3 - 3 Stueck (Verleiher: Christian)

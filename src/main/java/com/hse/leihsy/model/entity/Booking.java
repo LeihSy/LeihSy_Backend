@@ -65,18 +65,6 @@ public class Booking extends BaseEntity {
     private LocalDateTime confirmedPickup;
 
     /**
-     * Sicherheits-Token zur Abholbestätigung
-     */
-    @Column(name = "pickup_token")
-    private String pickupToken;
-
-    /**
-     * Ablaufzeitpunkt des Abhol-Tokens
-     */
-    @Column(name = "pickup_token_expiry")
-    private LocalDateTime pickupTokenExpiry;
-
-    /**
      * Tatsaechliche Ausgabe (wann wurde das Item uebergeben)
      */
     @Column(name = "distribution_date")

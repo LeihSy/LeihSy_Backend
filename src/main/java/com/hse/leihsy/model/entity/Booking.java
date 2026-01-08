@@ -27,25 +27,25 @@ public class Booking extends BaseEntity {
     private String message;
 
     /**
-     * Status-String (wird berechnet, aber auch gespeichert für einfache Queries)
+     * Status-String (wird berechnet, aber auch gespeichert fuer einfache Queries)
      */
     @Column(name = "status", length = 255)
     private String status;
 
     /**
-     * Gewünschter Ausleihbeginn
+     * Gewuenschter Ausleihbeginn
      */
     @Column(name = "start_date")
     private LocalDateTime startDate;
 
     /**
-     * Gewünschtes Ausleihende
+     * Gewuenschtes Ausleihende
      */
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
     /**
-     * Terminvorschläge als JSON-Array
+     * Terminvorschlaege als JSON-Array
      * Format: ["2025-12-01T10:00:00", "2025-12-01T14:00:00", "2025-12-02T09:00:00"]
      */
     @Column(name = "proposed_pickups", columnDefinition = "TEXT")
@@ -59,7 +59,7 @@ public class Booking extends BaseEntity {
     private User proposalBy;
 
     /**
-     * Finaler bestätigter Abholtermin
+     * Finaler bestaetigter Abholtermin
      */
     @Column(name = "confirmed_pickup")
     private LocalDateTime confirmedPickup;
@@ -77,18 +77,20 @@ public class Booking extends BaseEntity {
     private LocalDateTime pickupTokenExpiry;
 
     /**
-     * Tatsächliche Ausgabe (wann wurde das Item übergeben)
+     * Tatsaechliche Ausgabe (wann wurde das Item uebergeben)
      */
     @Column(name = "distribution_date")
     private LocalDateTime distributionDate;
 
     /**
-     * Tatsächliche Rückgabe
+     * Tatsaechliche Rueckgabe
      */
     @Column(name = "return_date")
     private LocalDateTime returnDate;
 
-    // Relationships
+    // ========================================
+    // RELATIONSHIPS
+    // ========================================
 
     /**
      * Entleiher (Student der ausleiht)
@@ -112,6 +114,17 @@ public class Booking extends BaseEntity {
     private Item item;
 
 
+    /**
+     * Optionale Zuordnung zu einer Studentengruppe
+     * NULL = Einzelbuchung, sonst = Gruppenbuchung
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private StudentGroup studentGroup;
+
+    /**
+     * Konstruktor fuer neue Buchung mit automatischer Verleiher-Zuweisung
+     */
     public Booking(User user, Item item, LocalDateTime startDate, LocalDateTime endDate) {
         this.user = user;
         this.item = item;
@@ -129,31 +142,31 @@ public class Booking extends BaseEntity {
      * Berechnet den aktuellen Status basierend auf den Timestamp-Feldern.
      */
     public BookingStatus calculateStatus() {
-        // Gelöscht/Abgelehnt
+        // Geloescht/Abgelehnt
         if (getDeletedAt() != null) {
             return BookingStatus.REJECTED;
         }
 
-        // Zurückgegeben
+        // Zurueckgegeben
         if (returnDate != null) {
             return BookingStatus.RETURNED;
         }
 
-        // Ausgegeben (aber noch nicht zurück)
+        // Ausgegeben (aber noch nicht zurueck)
         if (distributionDate != null) {
             return BookingStatus.PICKED_UP;
         }
 
-        // Bestätigt (aber noch nicht abgeholt)
+        // Bestaetigt (aber noch nicht abgeholt)
         if (confirmedPickup != null) {
-            // Prüfen ob abgelaufen (24h nach confirmed_pickup)
+            // Pruefen ob abgelaufen (24h nach confirmed_pickup)
             if (LocalDateTime.now().isAfter(confirmedPickup.plusHours(24))) {
                 return BookingStatus.EXPIRED;
             }
             return BookingStatus.CONFIRMED;
         }
 
-        // Noch nicht bestätigt - prüfen ob automatisch storniert
+        // Noch nicht bestaetigt - pruefen ob automatisch storniert
         if (getCreatedAt() != null && LocalDateTime.now().isAfter(getCreatedAt().plusHours(24))) {
             return BookingStatus.CANCELLED;
         }
@@ -168,4 +181,10 @@ public class Booking extends BaseEntity {
         this.status = calculateStatus().name();
     }
 
+    /**
+     * Prueft ob diese Buchung zu einer Gruppe gehoert
+     */
+    public boolean isGroupBooking() {
+        return studentGroup != null;
+    }
 }

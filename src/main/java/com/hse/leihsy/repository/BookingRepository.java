@@ -51,6 +51,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "AND b.deletedAt IS NULL")
     List<Booking> findActiveByItemId(@Param("itemId") Long itemId);
 
+    // Alle Buchungen eines Items (inkl. abgeschlossene, ohne gelöschte)
+    @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.createdAt DESC")
+    List<Booking> findByItemId(@Param("itemId") Long itemId);
+
     // Buchungen die einen Zeitraum überlappen
     @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId " +
             "AND b.startDate <= :endDate AND b.endDate >= :startDate " +
@@ -182,6 +188,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Alle aktiven Bookings (ohne gelöschte)
     @Query("SELECT b FROM Booking b WHERE b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     List<Booking> findAllActive();
+
+    @Query("SELECT b FROM Booking b WHERE b.studentGroup.id = :groupId AND b.deletedAt IS NULL")
+    List<Booking> findByStudentGroupId(@Param("groupId") Long groupId);
 
     // Findet eine Buchung anhand des Sicherheits-Tokens
     Optional<Booking> findByPickupToken(String token);

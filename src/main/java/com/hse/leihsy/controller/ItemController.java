@@ -1,8 +1,11 @@
 package com.hse.leihsy.controller;
 
+import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.mapper.ItemMapper;
+import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.dto.ItemCreateRequestDTO;
 import com.hse.leihsy.model.dto.ItemDTO;
+import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.model.entity.Item;
 import com.hse.leihsy.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +30,7 @@ public class ItemController {
 
     private final ItemService itemService;
     private final ItemMapper itemMapper;
+    private final BookingMapper bookingMapper;
 
     // ========================================
     // GET ENDPOINTS
@@ -68,6 +72,18 @@ public class ItemController {
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId) {
         List<Item> items = itemService.getItemsByLender(lenderId);
         return ResponseEntity.ok(itemMapper.toDTOList(items));
+    }
+
+    @Operation(summary = "Get all bookings for an item", description = "Returns all bookings for a specific item by item ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Item not found")
+    })
+    @GetMapping("/{id}/bookings")
+    public ResponseEntity<List<BookingDTO>> getBookingsByItemId(
+            @Parameter(description = "ID of the item") @PathVariable Long id) {
+        List<Booking> bookings = itemService.getBookingsByItemId(id);
+        return ResponseEntity.ok(bookingMapper.toDTOList(bookings));
     }
 
     // ========================================

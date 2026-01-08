@@ -125,13 +125,13 @@ public class StudentGroupController {
 
     @Operation(
             summary = "Mitglied hinzufügen",
-            description = "Fügt einen User als Mitglied zur Gruppe hinzu (nur Owner)"
+            description = "Fügt einen User als Mitglied zur Gruppe hinzu. Jeder User kann sich selbst hinzufügen, nur der Owner kann andere User hinzufügen."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Mitglied erfolgreich hinzugefügt"),
             @ApiResponse(responseCode = "400", description = "User ist bereits Mitglied"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung (nicht Owner)"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung (kann nur sich selbst oder als Owner andere hinzufügen)"),
             @ApiResponse(responseCode = "404", description = "Gruppe oder User nicht gefunden")
     })
     @PostMapping("/{groupId}/members/{userId}")

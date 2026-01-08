@@ -175,20 +175,25 @@ public class StudentGroupService {
     }
 
     /**
-     * Fuegt ein Mitglied zur Gruppe hinzu (nur Owner)
+     * Fuegt ein Mitglied zur Gruppe hinzu
+     * - Jeder User kann sich selbst zur Gruppe hinzufügen
+     * - Der Owner kann auch andere User hinzufügen
      */
     @Transactional
     public StudentGroupDTO addMember(Long groupId, Long userId) {
         StudentGroup group = findActiveGroupById(groupId);
         User currentUser = userService.getCurrentUser();
 
-        // Nur Owner darf Mitglieder hinzufuegen
-        if (!group.isOwner(currentUser)) {
-            throw new IllegalStateException("Nur der Ersteller kann Mitglieder hinzufügen");
-        }
-
         User newMember = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Prüfe Berechtigung: User kann sich selbst hinzufügen ODER muss Owner sein
+        boolean isSelf = currentUser.getId().equals(userId);
+        boolean isOwner = group.isOwner(currentUser);
+
+        if (!isSelf && !isOwner) {
+            throw new IllegalStateException("Sie können nur sich selbst zur Gruppe hinzufügen oder müssen der Ersteller sein");
+        }
 
         if (group.isMember(newMember)) {
             throw new IllegalArgumentException("User ist bereits Mitglied der Gruppe");

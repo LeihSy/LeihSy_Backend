@@ -59,7 +59,7 @@ public class UserSyncFilter extends OncePerRequestFilter {
 
     /**
      * Synchronisiert User-Daten aus dem JWT Token mit der Datenbank.
-     * Erstellt neuen User falls nicht vorhanden, aktualisiert Namen falls geändert.
+     * Erstellt neuen User falls nicht vorhanden, aktualisiert Namen/Email falls geändert.
      */
     private void syncUserFromToken(Jwt jwt) {
         String keycloakId = jwt.getSubject();
@@ -67,12 +67,29 @@ public class UserSyncFilter extends OncePerRequestFilter {
         // Prüfen ob User bereits existiert
         userRepository.findByUniqueId(keycloakId).ifPresentOrElse(
                 existingUser -> {
-                    // User existiert - optional: Namen aktualisieren falls geändert
+
+                    // User existiert
                     String tokenName = extractName(jwt);
+                    String tokenEmail = jwt.getClaimAsString("email");
+
+                    boolean changed = false;
+
+                    // Check Namensänderung
                     if (tokenName != null && !tokenName.equals(existingUser.getName())) {
                         existingUser.setName(tokenName);
+                        changed = true;
+                    }
+
+                    // Check Emailsänderung
+                    if (tokenEmail != null && !tokenEmail.equals(existingUser.getEmail())) {
+                        existingUser.setEmail(tokenEmail);
+                        changed = true;
+                    }
+
+                    // speichern nur wenn änderungen gibt
+                    if (changed) {
                         userRepository.save(existingUser);
-                        log.debug("Updated user name for: {}", keycloakId);
+                        log.debug("Updated user data for: {}", keycloakId);
                     }
                 },
                 () -> {
@@ -92,6 +109,7 @@ public class UserSyncFilter extends OncePerRequestFilter {
         User newUser = new User();
         newUser.setUniqueId(keycloakId);
         newUser.setName(name != null ? name : "Unknown");
+        newUser.setEmail(email);
         newUser.setBudget(BigDecimal.ZERO);
 
         userRepository.save(newUser);

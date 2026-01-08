@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
-
+import org.springframework.core.io.ByteArrayResource;
 
 /**
  * EmailService - Zentraler Service für den E-Mail-Versand
@@ -27,51 +27,60 @@ public class EmailService {
     @Value("${app.mail.sender}")
     private String senderEmail;
 
-    /**
-     * Sendet eine Bestätigungs-Email zur Abholung an den Studenten.
-     * Enthält den Link, der zur Bestätigung geklickt werden muss.
-     */
-    public void sendPickupConfirmation(String toEmail, String pickupLink) {
-        try {
 
-            //  Nachricht erstellen
+    /**
+     * Sendet eine E-Mail mit einem PDF-Anhang
+     */
+    public void sendBookingPdf(String to, String cc, String subject, String body, byte[] pdfBytes, String filename) {
+        try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
 
-            //  Header-Daten setzen (Von, An, Betreff)
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+            // true = multipart (needed for attachments)
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
             helper.setFrom(senderEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("LeihSy: Bestätigung Ihrer Abholung");
+            helper.setTo(to);
+            if (cc != null && !cc.isEmpty()) {
+                helper.setCc(cc);
+            }
+            helper.setSubject(subject);
+            helper.setText(body, true); // true = HTML
 
-            //  Text-Inhalt definieren
-            String htmlMsg = String.format(
-                    "<html>" +
-                    "<body>" +
-                    "<h3>Hallo,</h3>" +
-                    "<p>Bitte bestaetigen Sie die Abholung Ihres Artikels durch Klicken auf folgenden Link:</p>" +
-                    "<p><a href='%s' style='font-size: 16px; color: #1a73e8;'><strong>[ Abholung jetzt bestaetigen ]</strong></a></p>" +
-                    "<br>" +
-                    "<p><small>Falls der Link nicht funktioniert, kopieren Sie diese URL in Ihren Browser:</small><br>" +
-                    "<small>%s</small></p>" +
-                    "<p><i>Dieser Link ist 15 Minuten gueltig.</i></p>" +
-                    "</body>" +
-                    "</html>",
-                    pickupLink, pickupLink
-            );
+            // Attach PDF
+            helper.addAttachment(filename, new ByteArrayResource(pdfBytes));
 
-            // In HTML umwandeln
-            helper.setText(htmlMsg, true);
-
-            // E-Mail versenden
             mailSender.send(mimeMessage);
-            log.info("Abholbestätigung gesendet an: {}", toEmail);
+            log.info("PDF E-Mail erfolgreich gesendet an: {}", to);
+
         } catch (MessagingException e) {
-            // Fehler loggen aber als RuntimeException weiterwerfen
-            log.error("Fehler beim Erstellen der HTML-E-Mail an {}", toEmail, e);
-            throw new RuntimeException("Email konnte nicht gesendet werden.");
-        } catch (Exception e) {
-            log.error("Allgemeiner Fehler beim Senden an {}", toEmail, e);
-            throw new RuntimeException("Email-Versand fehlgeschlagen.");
+            log.error("Senden der PDF E-Mail fehlgeschlagen an: {}", to, e);
+        }
+    }
+
+    /**
+     * Sendet eine einfache HTML-Email für Statusänderungen (ohne PDF)
+     */
+    public void sendStatusChangeEmail(String to, String cc, String subject, String body) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+
+            helper.setFrom(senderEmail);
+            helper.setTo(to);
+
+            // WICHTIG: Lender ins CC setzen
+            if (cc != null && !cc.isEmpty()) {
+                helper.setCc(cc);
+            }
+
+            helper.setSubject(subject);
+            helper.setText(body, true); // true = HTML
+
+            mailSender.send(mimeMessage);
+            log.info("Status-Update Email gesendet an: {} (CC: {})", to, cc);
+
+        } catch (MessagingException e) {
+            log.error("Fehler beim Senden der Status-Email an {}", to, e);
         }
     }
 }

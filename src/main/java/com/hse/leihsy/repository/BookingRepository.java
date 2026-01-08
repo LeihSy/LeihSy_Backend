@@ -191,7 +191,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT b FROM Booking b WHERE b.studentGroup.id = :groupId AND b.deletedAt IS NULL")
     List<Booking> findByStudentGroupId(@Param("groupId") Long groupId);
-
-    // Findet eine Buchung anhand des Sicherheits-Tokens
-    Optional<Booking> findByPickupToken(String token);
 }

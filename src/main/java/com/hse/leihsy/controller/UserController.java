@@ -81,7 +81,7 @@ public class UserController {
 
     @Operation(
             summary = "Get bookings of a user",
-            description = "Returns all bookings for a specific user. Admins can view any user, users can only view their own bookings."
+            description = "Returns all bookings for a specific user including soft-deleted (cancelled) bookings. Admins can view any user, users can only view their own bookings."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
@@ -90,8 +90,8 @@ public class UserController {
     @GetMapping("/{userId}/bookings")
     public ResponseEntity<List<BookingDTO>> getUserBookings(
             @Parameter(description = "ID of the user") @PathVariable Long userId,
-            @Parameter(description = "Include soft-deleted bookings (admin only)")
-            @RequestParam(required = false, defaultValue = "false") boolean deleted
+            @Parameter(description = "Include soft-deleted bookings")
+            @RequestParam(required = false, defaultValue = "true") boolean deleted
     ) {
         List<BookingDTO> bookings = bookingService.getBookingsByUserId(userId, deleted);
         return ResponseEntity.ok(bookings);

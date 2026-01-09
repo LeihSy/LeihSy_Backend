@@ -127,7 +127,7 @@ public class BookingController {
 
     @Operation(
             summary = "Booking-Status aktualisieren",
-            description = "Generischer Endpoint fuer alle Booking-Status-Updates. Unterstuetzt Actions: confirm, select_pickup, propose, pickup, return"
+            description = "Generischer Endpoint fuer alle Booking-Status-Updates. Unterstuetzt Actions: confirm, select_pickup, propose, pickup, return. Optional kann auch die Nachricht (message) aktualisiert werden."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Status erfolgreich aktualisiert"),

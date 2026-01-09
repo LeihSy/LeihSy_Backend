@@ -517,7 +517,7 @@ public class BookingService {
 
         User currentUser = userService.getCurrentUser();
 
-        return switch (action.toLowerCase()) {
+        BookingDTO result = switch (action.toLowerCase()) {
             case "confirm" -> {
                 if (updateDTO.getProposedPickups() == null || updateDTO.getProposedPickups().isEmpty()) {
                     throw new IllegalArgumentException("proposedPickups is required for action 'confirm'");
@@ -543,6 +543,16 @@ public class BookingService {
                             ". Valid values: confirm, select_pickup, propose, pickup, return"
             );
         };
+
+        // Optional: Update message if provided
+        if (updateDTO.getMessage() != null) {
+            Booking booking = getBookingById(id);
+            booking.setMessage(updateDTO.getMessage());
+            bookingRepository.save(booking);
+            result = bookingMapper.toDTO(booking);
+        }
+
+        return result;
     }
 
     // ========================================

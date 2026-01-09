@@ -38,4 +38,10 @@ public class BookingStatusUpdateDTO {
             example = "2025-12-20T10:00:00"
     )
     private LocalDateTime selectedPickup;
+
+    @Schema(
+            description = "Optional: Update the booking message",
+            example = "Aktualisierte Nachricht"
+    )
+    private String message;
 }

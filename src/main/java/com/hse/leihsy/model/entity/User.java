@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 /**
  * User Entity - Benutzer des Systems.
@@ -11,6 +12,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
 public class User extends BaseEntity {
 
     /**
@@ -24,6 +28,10 @@ public class User extends BaseEntity {
      */
     @Column(name = "name")
     private String name;
+
+
+    @Column(name = "email")
+    private String email;
 
     /**
      * Budget für Ausleihen
@@ -53,62 +61,10 @@ public class User extends BaseEntity {
 
     // Constructors
 
-    public User() {
-    }
-
     public User(String uniqueId, String name) {
         this.uniqueId = uniqueId;
         this.name = name;
         this.budget = BigDecimal.ZERO;
     }
 
-    // Getters and Setters
-
-    public String getUniqueId() {
-        return uniqueId;
-    }
-
-    public void setUniqueId(String uniqueId) {
-        this.uniqueId = uniqueId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public BigDecimal getBudget() {
-        return budget;
-    }
-
-    public void setBudget(BigDecimal budget) {
-        this.budget = budget;
-    }
-
-    public List<Booking> getBookingsAsUser() {
-        return bookingsAsUser;
-    }
-
-    public void setBookingsAsUser(List<Booking> bookingsAsUser) {
-        this.bookingsAsUser = bookingsAsUser;
-    }
-
-    public List<Booking> getBookingsAsLender() {
-        return bookingsAsLender;
-    }
-
-    public void setBookingsAsLender(List<Booking> bookingsAsLender) {
-        this.bookingsAsLender = bookingsAsLender;
-    }
-
-    public List<Item> getLendingItems() {
-        return lendingItems;
-    }
-
-    public void setLendingItems(List<Item> lendingItems) {
-        this.lendingItems = lendingItems;
-    }
 }

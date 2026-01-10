@@ -12,9 +12,10 @@ import com.hse.leihsy.repository.ItemRepository;
 import com.hse.leihsy.repository.StudentGroupRepository;
 import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,9 +32,12 @@ public class BookingService {
     private final ObjectMapper objectMapper;
     private final BookingMapper bookingMapper;
     private final UserService userService;
+    private final EmailService emailService;
+    private final PdfGenerationService pdfService;
+
 
     // ========================================
-    // GET METHODEN - MIT DTOs
+    // GET METHODEN
     // ========================================
 
     /**
@@ -135,8 +139,10 @@ public class BookingService {
         LocalDateTime threshold24h = now.minusHours(24);
 
         if (status == null || status.isBlank()) {
+            // Alle Bookings (ohne gelöschte)
             bookings = bookingRepository.findAllActive();
         } else {
+            // Nach Status filtern mit spezifischen Queries
             bookings = switch (status.toLowerCase()) {
                 case "overdue" -> bookingRepository.findOverdue(now);
                 case "pending" -> bookingRepository.findAllPending(threshold24h);
@@ -188,7 +194,7 @@ public class BookingService {
     }
 
     // ========================================
-    // GET METHODEN - ENTITIES (fuer interne Nutzung)
+    // PRIVATE ENTITY HELPER
     // ========================================
 
     /**
@@ -219,13 +225,15 @@ public class BookingService {
     public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
                                     LocalDateTime endDate, String message, Long groupId) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        // Prüfe ob Item existiert und verfügbar ist
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
 
-        // Verfuegbarkeitspruefung
+        // Prüfe ob User existiert
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Prüfe Verfügbarkeit (keine überlappenden Bookings)
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(itemId, startDate, endDate);
         if (!overlapping.isEmpty()) {
             throw new RuntimeException("Item is not available for the requested period");
@@ -270,7 +278,7 @@ public class BookingService {
     }
 
     // ========================================
-    // UPDATE METHODEN
+    // UPDATE METHODEN & EMAIL LOGIK
     // ========================================
 
     /**
@@ -295,7 +303,8 @@ public class BookingService {
     }
 
     /**
-     * Student waehlt einen der vorgeschlagenen Abholtermine aus
+     * Student waehlt einen der vorgeschlagenen Abholtermine aus -> status CONFIRMED
+     * * Trigger: E-Mail an Student (CC Lender)
      */
     @Transactional
     public BookingDTO selectPickupTime(Long id, LocalDateTime selectedPickup) {
@@ -308,6 +317,27 @@ public class BookingService {
 
         booking.setConfirmedPickup(selectedPickup);
         Booking saved = bookingRepository.save(booking);
+
+        // --- Email Benachrichtigung (CONFIRMED) ---
+        try {
+            String studentEmail = getEmailOrFallback(saved.getUser().getEmail());
+            String lenderEmail = saved.getLender() != null ? saved.getLender().getEmail() : null;
+
+            String subject = "Buchung Bestätigt: " + saved.getItem().getProduct().getName();
+            String body = String.format(
+                    "<h3>Hallo %s,</h3>" +
+                            "<p>Deine Buchung für <b>%s</b> wurde bestätigt.</p>" +
+                            "<p><b>Abholtermin:</b> %s</p>" +
+                            "<br><p>Dein LeihSy Team.</p>",
+                    saved.getUser().getName(),
+                    saved.getItem().getProduct().getName(),
+                    selectedPickup.toString().replace("T", " ")
+            );
+
+            emailService.sendStatusChangeEmail(studentEmail, lenderEmail, subject, body);
+        } catch (Exception e) {
+            log.error("Fehler beim Senden der CONFIRMED Email", e);
+        }
         return bookingMapper.toDTO(saved);
     }
 
@@ -334,51 +364,146 @@ public class BookingService {
     }
 
     /**
-     * Verleiher dokumentiert Ausgabe
+     * Verleiher dokumentiert Ausgabe -> Status wird PICKED_UP
+     * Trigger: E-Mail mit PDF an Student (CC Lender)
      */
     @Transactional
     public BookingDTO recordPickup(Long id) {
         Booking booking = getBookingById(id);
 
         if (booking.getConfirmedPickup() == null) {
-            throw new RuntimeException("No pickup time confirmed yet");
+            throw new RuntimeException("Noch keine Abholzeit bestätigt");
         }
 
         if (booking.getDistributionDate() != null) {
-            throw new RuntimeException("Item already picked up");
+            throw new RuntimeException("Artikel bereits abgeholt");
         }
 
+        // DB-Status aktualisieren
         booking.setDistributionDate(LocalDateTime.now());
+        booking.updateStatus();
         Booking saved = bookingRepository.save(booking);
+
+        // PDF generieren und E-Mail senden
+        try {
+            log.info("Generating PDF for Booking ID {}", saved.getId());
+            byte[] pdfBytes = pdfService.generateBookingPdf(saved);
+
+            // E-Mails ermitteln (inkl. Fallback/Null-Handling)
+            String studentEmail = getEmailOrFallback(saved.getUser().getEmail());
+            String lenderEmail = saved.getLender() != null ? saved.getLender().getEmail() : null;
+            if (studentEmail == null || studentEmail.isEmpty()) studentEmail = "dev.email@hs-esslingen.de";
+
+            String subject = "Abholung Erfolgreich: " + saved.getItem().getProduct().getName();
+            String body = String.format(
+                    "<h3>Hallo %s,</h3>" +
+                            "<p>Du hast den Artikel <b>%s</b> erfolgreich abgeholt.</p>" +
+                            "<p>Im Anhang findest du das Übergabeprotokoll als PDF.</p>" +
+                            "<br><p>Dein LeihSy Team</p>",
+                    saved.getUser().getName(),
+                    saved.getItem().getProduct().getName()
+            );
+
+            String filename = "Abholung_" + saved.getId() + ".pdf";
+
+            emailService.sendBookingPdf(studentEmail, lenderEmail, subject, body, pdfBytes, filename);
+
+        } catch (Exception e) {
+            log.error("Error sending confirmation email for booking {}", saved.getId(), e);
+        }
+
         return bookingMapper.toDTO(saved);
     }
 
     /**
-     * Verleiher dokumentiert Rueckgabe
+     * Verleiher dokumentiert Rueckgabe -> Status wird RETURNED
+     * Trigger: E-Mail an Student (CC Lender)
      */
     @Transactional
     public BookingDTO recordReturn(Long id) {
         Booking booking = getBookingById(id);
 
+        // Check: Wurde es abgeholt?
         if (booking.getDistributionDate() == null) {
             throw new RuntimeException("Artikel wurde noch nicht abgeholt.");
         }
 
+        // Check: Bereits zurückgegeben?
         if (booking.getReturnDate() != null) {
             throw new RuntimeException("Artikel wurde bereits zurueckgegeben.");
         }
 
+        // Aktualisiere DB-Status
         booking.setReturnDate(LocalDateTime.now());
         log.info("Rueckgabe dokumentiert: Buchung ID {}, Item {}, User {}",
                 id, booking.getItem().getInvNumber(), booking.getUser().getUniqueId());
         Booking saved = bookingRepository.save(booking);
+
+
+        // --- Email Benachrichtigung (RETURNED) ---
+        try {
+            String studentEmail = getEmailOrFallback(saved.getUser().getEmail());
+            String lenderEmail = saved.getLender() != null ? saved.getLender().getEmail() : null;
+
+            String subject = "Rückgabe Erfolgreich: " + saved.getItem().getProduct().getName();
+            String body = String.format(
+                    "<h3>Hallo %s,</h3>" +
+                            "<p>Die Rückgabe für <b>%s</b> wurde erfolgreich dokumentiert.</p>" +
+                            "<p>Dein LeihSy Team</b></p>",
+                    saved.getUser().getName(),
+                    saved.getItem().getProduct().getName()
+            );
+
+            emailService.sendStatusChangeEmail(studentEmail, lenderEmail, subject, body);
+        } catch (Exception e) {
+            log.error("Fehler beim Senden der RETURNED Email", e);
+        }
+
+
         return bookingMapper.toDTO(saved);
     }
 
     /**
+     * Statusänderung: ANY -> REJECTED / CANCELLED
+     */
+    @Transactional
+    public void cancelBooking(Long id) {
+        Booking booking = getBookingById(id);
+
+        BookingStatus status = booking.calculateStatus();
+        if (status == BookingStatus.PICKED_UP || status == BookingStatus.RETURNED) {
+            throw new RuntimeException("Cannot cancel a booking that is already picked up or returned");
+        }
+
+        // DB Update
+        booking.setDeletedAt(LocalDateTime.now());
+        Booking saved = bookingRepository.save(booking);
+
+        // EMAIL: REJECTED / CANCELLED
+        try {
+            String studentEmail = getEmailOrFallback(saved.getUser().getEmail());
+            String lenderEmail = saved.getLender() != null ? saved.getLender().getEmail() : null;
+
+            String subject = "Buchung Storniert/Abgelehnt: " + saved.getItem().getProduct().getName();
+            String body = String.format(
+                    "<h3>Hallo %s,</h3>" +
+                            "<p>Deine Buchung für <b>%s</b> wurde storniert oder abgelehnt.</p>" +
+                            "<br><p>Dein LeihSy Team</p>",
+                    saved.getUser().getName(),
+                    saved.getItem().getProduct().getName()
+            );
+
+            // an Entleiher senden, Verleiher in CC
+            emailService.sendStatusChangeEmail(studentEmail, lenderEmail, subject, body);
+
+        } catch (Exception e) {
+            log.error("Fehler beim Senden der REJECTED Email", e);
+        }
+    }
+
+    /**
      * Generische Methode fuer alle Status-Updates via PATCH-Endpoint
-     *
-     * @param id        Booking ID
+     * @param id Booking ID
      * @param updateDTO DTO mit action und optionalen Parametern
      * @return Aktualisierte Booking als DTO
      */
@@ -419,7 +544,6 @@ public class BookingService {
             );
         };
 
-        // Optional: Update message if provided
         if (updateDTO.getMessage() != null) {
             Booking booking = getBookingById(id);
             booking.setMessage(updateDTO.getMessage());
@@ -430,20 +554,14 @@ public class BookingService {
         return result;
     }
 
-    /**
-     * Student oder Admin storniert Booking (auch fuer Verleiher-Reject)
-     */
-    @Transactional
-    public void cancelBooking(Long id) {
-        Booking booking = getBookingById(id);
-
-        BookingStatus status = booking.calculateStatus();
-        if (status == BookingStatus.PICKED_UP || status == BookingStatus.RETURNED) {
-            throw new RuntimeException("Cannot cancel a booking that is already picked up or returned");
+    // ========================================
+    // HELPER - TEST FALLBACK FUER EMAIL
+    // ========================================
+    private String getEmailOrFallback(String email) {
+        if (email == null || email.isBlank()) {
+            return "dev.email@hs-esslingen.de";
         }
-
-        booking.setDeletedAt(LocalDateTime.now());
-        bookingRepository.save(booking);
+        return email;
     }
 
     // ========================================
@@ -463,8 +581,7 @@ public class BookingService {
             return List.of();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<List<LocalDateTime>>() {
-            });
+            return objectMapper.readValue(json, new TypeReference<List<LocalDateTime>>() {});
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse pickups from JSON", e);
         }

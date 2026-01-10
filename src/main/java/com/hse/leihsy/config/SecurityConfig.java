@@ -59,6 +59,9 @@ public class SecurityConfig {
                         // User-Info Endpoint (fuer Frontend um aktuellen User zu holen)
                         .requestMatchers("GET", "/api/users/me").authenticated()
 
+                        // Abhol-Link Student (Muss öffentlich sein)
+                        .requestMatchers("/api/bookings/verify-pickup").permitAll()
+
                         // Alle anderen API-Endpoints erfordern Authentifizierung
                         .requestMatchers("/api/**").authenticated()
 

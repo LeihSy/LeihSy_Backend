@@ -2,6 +2,7 @@ package com.hse.leihsy.model.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.*;
 
 /**
  * ProductSet Entity - Empfehlungssystem für zusammengehörige Produkte
@@ -16,6 +17,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "sets")
 @IdClass(ProductSetId.class)
+@Getter
+@Setter
+@NoArgsConstructor
 public class ProductSet {
 
     /**
@@ -58,52 +62,8 @@ public class ProductSet {
 
     // Constructors
 
-    public ProductSet() {
-    }
-
     public ProductSet(Product parentProduct, Product childProduct) {
         this.parentProduct = parentProduct;
         this.childProduct = childProduct;
-    }
-
-    // Getters and Setters
-    public Product getParentProduct() {
-        return parentProduct;
-    }
-
-    public void setParentProduct(Product parentProduct) {
-        this.parentProduct = parentProduct;
-    }
-
-    public Product getChildProduct() {
-        return childProduct;
-    }
-
-    public void setChildProduct(Product childProduct) {
-        this.childProduct = childProduct;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
     }
 }

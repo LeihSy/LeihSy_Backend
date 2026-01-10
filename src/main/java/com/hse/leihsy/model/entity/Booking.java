@@ -1,12 +1,8 @@
 package com.hse.leihsy.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
+import lombok.*;
 
 /**
  * Booking Entity - Ausleih-Anfrage und Buchung
@@ -21,6 +17,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Booking extends BaseEntity {
 
     /**
@@ -103,6 +100,7 @@ public class Booking extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
+
 
     /**
      * Optionale Zuordnung zu einer Studentengruppe

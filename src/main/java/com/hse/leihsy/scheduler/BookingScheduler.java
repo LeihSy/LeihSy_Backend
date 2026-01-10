@@ -26,6 +26,7 @@ import java.util.List;
 public class BookingScheduler {
 
     private final BookingRepository bookingRepository;
+    private final com.hse.leihsy.service.ReminderService reminderService;
 
     @Value("${leihsy.booking.auto-cancel-hours:24}")
     private int autoCancelHours;
@@ -97,5 +98,14 @@ public class BookingScheduler {
         }
 
         log.info("Auto-expired {} confirmed bookings", confirmedBookings.size());
+    }
+
+    /**
+     * Versendet tägliche Erinnerungs-Emails (Fälligkeit & Überfälligkeit).
+     * Läuft täglich um 08:00 Uhr.
+     */
+    @Scheduled(cron = "0 0 8 * * *")
+    public void runReminders() {
+        reminderService.processReminders();
     }
 }

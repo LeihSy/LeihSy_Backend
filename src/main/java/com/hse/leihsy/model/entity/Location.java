@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 /**
  * Location Entity - Lagerorte/Räme für Products.
@@ -11,6 +12,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "locations")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Location extends BaseEntity {
 
     /**
@@ -30,28 +34,7 @@ public class Location extends BaseEntity {
 
     // Constructors
 
-    public Location() {
-    }
-
     public Location(String roomNr) {
         this.roomNr = roomNr;
-    }
-
-    // Getters and Setters
-
-    public String getRoomNr() {
-        return roomNr;
-    }
-
-    public void setRoomNr(String roomNr) {
-        this.roomNr = roomNr;
-    }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
     }
 }

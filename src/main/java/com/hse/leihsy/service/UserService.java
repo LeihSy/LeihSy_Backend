@@ -3,6 +3,7 @@ package com.hse.leihsy.service;
 import com.hse.leihsy.model.entity.User;
 import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -39,7 +41,10 @@ public class UserService {
         user.setUniqueId(uniqueId);
         user.setName(name);
         user.setBudget(BigDecimal.ZERO); // Später für Nice-to-Have Feature
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        log.info("Created new user: {} (Keycloak ID: {})", name, maskId(uniqueId));
+        return savedUser;
     }
 
     /**
@@ -71,51 +76,62 @@ public class UserService {
      * @return Current User
      */
     public User getCurrentUser() {
-        System.out.println("--- UserService.getCurrentUser() START ---");
+        log.debug("getCurrentUser() called");
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println("Authentication: " + authentication);
 
             if (authentication == null) {
-                System.err.println("Authentication is NULL!");
+                log.error("Authentication is NULL - this should never happen!");
                 throw new RuntimeException("Access Denied: No authentication found");
             }
 
-            System.out.println("Authentication found: " + authentication.getClass().getName());
-            System.out.println("Principal type: " + authentication.getPrincipal().getClass().getName());
+            log.debug("Authentication found: {}", authentication.getClass().getSimpleName());
+            log.debug("Principal type: {}", authentication.getPrincipal().getClass().getSimpleName());
 
             if (!authentication.isAuthenticated()) {
-                System.err.println("User is not authenticated!");
+                log.error("User is not authenticated despite having authentication object");
                 throw new RuntimeException("Access Denied: User not authenticated");
             }
 
             if (!(authentication.getPrincipal() instanceof Jwt)) {
-                System.err.println("Principal is not a JWT! Type: " + authentication.getPrincipal().getClass().getName());
+                log.error("Principal is not a JWT! Type: {}", authentication.getPrincipal().getClass().getName());
                 throw new RuntimeException("Access Denied: Invalid authentication type");
             }
 
             Jwt jwt = (Jwt) authentication.getPrincipal();
             String keycloakId = jwt.getSubject();
 
-            System.out.println("Keycloak ID from token: " + keycloakId);
+            log.debug("Processing request for Keycloak ID: {}", maskId(keycloakId));
 
             User user = userRepository.findByUniqueId(keycloakId)
                     .orElseGet(() -> {
-                        System.out.println("User not found in DB, creating new user...");
+                        log.info("User not found in DB, creating new user for Keycloak ID: {}", maskId(keycloakId));
                         String name = jwt.getClaim("preferred_username");
                         String email = jwt.getClaim("email");
                         return createUser(keycloakId, name, email);
                     });
 
-            System.out.println("Found/Created User: ID=" + user.getId() + ", Name=" + user.getName());
-            System.out.println("--- UserService.getCurrentUser() END ---");
+            log.debug("User {} (ID={}) successfully authenticated", user.getName(), user.getId());
 
             return user;
 
         } catch (Exception e) {
-            System.err.println("Exception in getCurrentUser(): " + e.getMessage());
+            log.error("Exception in getCurrentUser(): {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    /**
+     * Maskiert eine sensitive ID für Logging
+     * Zeigt nur erste 4 und letzte 4 Zeichen
+     * @param id Die zu maskierende ID
+     * @return Maskierte ID (z.B. "123e****4000")
+     */
+    private String maskId(String id) {
+        if (id == null || id.length() < 8) {
+            return "****";
+        }
+        return id.substring(0, 4) + "****" + id.substring(id.length() - 4);
     }
 }

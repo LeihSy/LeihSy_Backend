@@ -493,7 +493,7 @@ public class BookingService {
                     saved.getItem().getProduct().getName()
             );
 
-            // Send to Student, CC Lender
+            // an Entleiher senden, Verleiher in CC
             emailService.sendStatusChangeEmail(studentEmail, lenderEmail, subject, body);
 
         } catch (Exception e) {
@@ -544,7 +544,6 @@ public class BookingService {
             );
         };
 
-        // Optional: Update message if provided
         if (updateDTO.getMessage() != null) {
             Booking booking = getBookingById(id);
             booking.setMessage(updateDTO.getMessage());
@@ -560,7 +559,6 @@ public class BookingService {
     // ========================================
     private String getEmailOrFallback(String email) {
         if (email == null || email.isBlank()) {
-            // Forces email to your Thunderbird for testing
             return "dev.email@hs-esslingen.de";
         }
         return email;

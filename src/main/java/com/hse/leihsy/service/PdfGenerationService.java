@@ -17,9 +17,15 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 
 public class PdfGenerationService {
+
+    // Einheitliches Datumsformat für alle Zeitangaben im PDF
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private static final Color PRIMARY_COLOR = new Color(59, 130, 246); // Blue-500 equivalent
 
+    /**
+     * Erstellt eine PDF-Abholbestätigung für eine Buchung.
+     * Rückgabe als Byte-Array, damit es direkt als HTTP-Response/Download versendet werden kann.
+     */
     public byte[] generateBookingPdf(Booking booking) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4);
@@ -30,7 +36,7 @@ public class PdfGenerationService {
             // 1. Header
             addHeader(document, booking);
 
-            // 2. Booking Info
+            // 2. Booking Info: Buchungsdetails (Status, Zeitpunkte, IDs)
             addSectionTitle(document, "Buchungsinformationen");
             PdfPTable infoTable = new PdfPTable(2);
             infoTable.setWidthPercentage(100);
@@ -54,7 +60,7 @@ public class PdfGenerationService {
             addInfoRow(userTable, "User-ID:", booking.getUser().getUniqueId());
             document.add(userTable);
 
-            // 4. Item Info
+            // 4. Item Info: Gegenstand/Inventar (was genau ausgeliehen wird + Verleiher)
             addSectionTitle(document, "Gegenstand");
             PdfPTable itemTable = new PdfPTable(2);
             itemTable.setWidthPercentage(100);
@@ -77,6 +83,7 @@ public class PdfGenerationService {
         }
     }
 
+    // Erstellt den visuellen Kopfbereich mit farbigem Hintergrund und Titel
     private void addHeader(Document document, Booking booking) throws DocumentException {
         // Blue Box Header simulation
         PdfPTable headerTable = new PdfPTable(1);
@@ -112,6 +119,10 @@ public class PdfGenerationService {
         document.add(new Paragraph(" "));
     }
 
+    /**
+     * Fügt eine Abschnittsüberschrift inkl. Line separator ein,
+     * um Inhalte im PDF klar zu strukturieren.
+     */
     private void addInfoRow(PdfPTable table, String label, String value) {
         Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
         Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 10);

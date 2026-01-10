@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +31,10 @@ public class LenderController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Lender not found")
+            @ApiResponse(responseCode = "404", description = "Lender not found"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Bookings oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canViewLenderBookings(#lenderId, authentication)")
     @GetMapping("/{lenderId}/bookings")
     public ResponseEntity<List<BookingDTO>> getLenderBookings(
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId,
@@ -57,6 +60,11 @@ public class LenderController {
             summary = "Get upcoming pickups for lender",
             description = "Returns confirmed bookings that are waiting for pickup. Sorted by pickup date."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Upcoming pickups retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Bookings oder Admin")
+    })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canViewLenderBookings(#lenderId, authentication)")
     @GetMapping("/{lenderId}/upcoming")
     public ResponseEntity<List<BookingDTO>> getLenderUpcoming(
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId
@@ -69,6 +77,11 @@ public class LenderController {
             summary = "Get active rentals for lender",
             description = "Returns items currently with the student. Sorted by return date."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Active rentals retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Bookings oder Admin")
+    })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canViewLenderBookings(#lenderId, authentication)")
     @GetMapping("/{lenderId}/active")
     public ResponseEntity<List<BookingDTO>> getLenderActive(
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId
@@ -81,6 +94,11 @@ public class LenderController {
             summary = "Get overdue rentals for lender",
             description = "Returns items that are currently rented but past their return date."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Overdue rentals retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Bookings oder Admin")
+    })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canViewLenderBookings(#lenderId, authentication)")
     @GetMapping("/{lenderId}/overdue")
     public ResponseEntity<List<BookingDTO>> getLenderOverdue(
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId

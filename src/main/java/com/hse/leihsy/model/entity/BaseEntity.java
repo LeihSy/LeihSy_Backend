@@ -2,12 +2,15 @@ package com.hse.leihsy.model.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.*;
 
 /**
  * Basis-Entity mit gemeinsamen Feldern für alle Entities.
  * Enthält: id, created_at, updated_at, deleted_at (Soft-Delete)
  */
 @MappedSuperclass
+@Getter
+@Setter
 public abstract class BaseEntity {
 
     @Id
@@ -48,39 +51,5 @@ public abstract class BaseEntity {
 
     public void restore() {
         this.deletedAt = null;
-    }
-
-    // Getters and Setters
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
     }
 }

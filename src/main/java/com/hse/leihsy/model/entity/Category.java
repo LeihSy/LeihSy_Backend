@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 /**
  * Category Entity - Oberkategorie für Products
@@ -11,6 +12,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "categories")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Category extends BaseEntity {
 
     /**
@@ -30,28 +34,7 @@ public class Category extends BaseEntity {
 
     // Constructors
 
-    public Category() {
-    }
-
     public Category(String name) {
         this.name = name;
-    }
-
-    // Getters and Setters
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
     }
 }

@@ -2,7 +2,6 @@ package com.hse.leihsy.controller;
 
 import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.model.dto.BookingDTO;
-import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +22,6 @@ import java.util.List;
 public class LenderController {
 
     private final BookingService bookingService;
-    private final BookingMapper bookingMapper;
 
     @Operation(
             summary = "Get bookings of a lender",

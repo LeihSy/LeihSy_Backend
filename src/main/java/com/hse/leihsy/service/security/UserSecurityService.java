@@ -9,19 +9,18 @@ import org.springframework.stereotype.Service;
 
 /**
  * Security Service für User-Autorisierung
- *
  * Prüft ob ein User berechtigt ist, eigene oder fremde User-Daten zu sehen.
  */
 @Service("userSecurityService")
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("unused")
 public class UserSecurityService {
 
     private final UserService userService;
 
     /**
      * Prüft ob der aktuelle User einen anderen User sehen darf.
-     *
      * Erlaubt wenn:
      * - User ist der User selbst
      *

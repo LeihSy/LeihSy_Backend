@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Service("studentGroupSecurityService")
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("unused")
 public class StudentGroupSecurityService {
 
     private final StudentGroupRepository groupRepository;
@@ -118,10 +119,6 @@ public class StudentGroupSecurityService {
         }
 
         // User kann sich selbst entfernen (wenn targetUserId == currentUser.id)
-        if (targetUserId != null && targetUserId.equals(currentUser.getId())) {
-            return true;
-        }
-
-        return false;
+        return targetUserId != null && targetUserId.equals(currentUser.getId());
     }
 }

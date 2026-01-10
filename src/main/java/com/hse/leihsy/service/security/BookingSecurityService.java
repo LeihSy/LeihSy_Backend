@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Service("bookingSecurityService")
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("unused")
 public class BookingSecurityService {
 
     private final BookingRepository bookingRepository;

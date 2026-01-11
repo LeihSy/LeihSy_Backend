@@ -133,7 +133,7 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Admins")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/names/{name}")
+    @GetMapping("/by-name/{name}")
     public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String name) {
         User user = userService.getUserByName(name);
         UserDTO dto = convertToDTO(user, List.of());

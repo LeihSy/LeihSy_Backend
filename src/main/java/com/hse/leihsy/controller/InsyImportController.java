@@ -32,9 +32,7 @@ public class InsyImportController {
 
     @Operation(summary = "Get all imports",
             description = "Returns all import items. Use ?status=PENDING|IMPORTED|REJECTED|UPDATED to filter.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Imports retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "Imports retrieved successfully")
     @GetMapping("/imports")
     public ResponseEntity<List<InsyImportItemDTO>> getAllImports(
             @Parameter(description = "Filter by status") @RequestParam(required = false) InsyImportStatus status
@@ -45,23 +43,9 @@ public class InsyImportController {
         return ResponseEntity.ok(importService.getAll(status));
     }
 
-    @Operation(summary = "Get import by ID", description = "Returns a single import item by its ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Import found"),
-            @ApiResponse(responseCode = "404", description = "Import not found")
-    })
-    @GetMapping("/imports/{id}")
-    public ResponseEntity<InsyImportItemDTO> getImportById(
-            @Parameter(description = "ID of the import item") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok(importService.getById(id));
-    }
-
     @Operation(summary = "Get import count",
             description = "Returns the count of imports. Use ?status=PENDING for badge display.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Count retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "Count retrieved successfully")
     @GetMapping("/imports/count")
     public ResponseEntity<Map<String, Long>> getImportCount(
             @Parameter(description = "Filter by status") @RequestParam(required = false, defaultValue = "PENDING") InsyImportStatus status
@@ -72,16 +56,24 @@ public class InsyImportController {
         return ResponseEntity.ok(Map.of("count", importService.countPending()));
     }
 
+    @Operation(summary = "Get import by ID", description = "Returns a single import item by its ID")
+    @ApiResponse(responseCode = "200", description = "Import found")
+    @ApiResponse(responseCode = "404", description = "Import not found")
+    @GetMapping("/imports/{id}")
+    public ResponseEntity<InsyImportItemDTO> getImportById(
+            @Parameter(description = "ID of the import item") @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(importService.getById(id));
+    }
+
     // ========================================
     // POST ENDPOINTS - Receive from InSy
     // ========================================
 
     @Operation(summary = "Receive data from InSy",
             description = "Endpoint for InSy to push item data. Creates new import item or updates existing PENDING one.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Data received and stored successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid data or item already processed")
-    })
+    @ApiResponse(responseCode = "201", description = "Data received and stored successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid data or item already processed")
     @PostMapping("/imports")
     public ResponseEntity<InsyImportItemDTO> receiveFromInsy(
             @Parameter(description = "Item data from InSy") @Valid @RequestBody InsyImportPushDTO pushData
@@ -94,9 +86,7 @@ public class InsyImportController {
 
     @Operation(summary = "Receive multiple items from InSy",
             description = "Endpoint for InSy to push multiple items at once")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Data received successfully")
-    })
+    @ApiResponse(responseCode = "201", description = "Data received successfully")
     @PostMapping("/imports/bulk")
     public ResponseEntity<Map<String, Object>> receiveMultipleFromInsy(
             @Parameter(description = "List of items from InSy") @Valid @RequestBody List<InsyImportPushDTO> pushDataList
@@ -115,11 +105,9 @@ public class InsyImportController {
     @Operation(summary = "Update import status (import or reject)",
             description = "Changes the status of an import item. Use action=IMPORT to import, action=REJECT to reject. " +
                     "If an item with the same inventory number exists, it will be updated instead of creating a duplicate.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Status updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request or item already processed"),
-            @ApiResponse(responseCode = "404", description = "Import item or referenced entities not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Status updated successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request or item already processed")
+    @ApiResponse(responseCode = "404", description = "Import item or referenced entities not found")
     @PatchMapping("/imports/{id}")
     public ResponseEntity<InsyImportItemDTO> updateImportStatus(
             @Parameter(description = "ID of the import item") @PathVariable Long id,
@@ -154,11 +142,9 @@ public class InsyImportController {
     @Operation(summary = "Batch update import status",
             description = "Imports multiple InSy items to the same Product. " +
                     "All items must be in PENDING status. Existing items will be updated.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items imported successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request or items not in PENDING status"),
-            @ApiResponse(responseCode = "404", description = "Product or items not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Items imported successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request or items not in PENDING status")
+    @ApiResponse(responseCode = "404", description = "Product or items not found")
     @PatchMapping("/imports/batch")
     public ResponseEntity<List<InsyImportItemDTO>> batchUpdateStatus(
             @Parameter(description = "Batch update configuration") @Valid @RequestBody InsyBatchImportRequestDTO request
@@ -172,9 +158,7 @@ public class InsyImportController {
 
     @Operation(summary = "[MOCK] Create test imports",
             description = "Creates mock import items for testing. Use this to populate the import queue without real InSy connection.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Mock data created successfully")
-    })
+    @ApiResponse(responseCode = "201", description = "Mock data created successfully")
     @PostMapping("/mock/imports")
     public ResponseEntity<Map<String, Object>> createMockImports(
             @Parameter(description = "Number of mock items to create") @RequestParam(defaultValue = "5") int count

@@ -35,9 +35,7 @@ public class LocationController {
             summary = "Get all locations",
             description = "Returns a list of all active locations. Only locations with at least one assigned item are displayed."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Locations retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "Locations retrieved successfully")
     @GetMapping
     public ResponseEntity<List<LocationDTO>> getAllLocations() {
         List<Location> locations = locationRepository.findAllActive();
@@ -49,10 +47,8 @@ public class LocationController {
             summary = "Get location by ID",
             description = "Returns a location with the specified ID"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Location found"),
-            @ApiResponse(responseCode = "404", description = "Location not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Location found")
+    @ApiResponse(responseCode = "404", description = "Location not found")
     @GetMapping("/{id}")
     public ResponseEntity<LocationDTO> getLocationById(
             @Parameter(description = "ID of the location to retrieve") @PathVariable Long id) {
@@ -66,24 +62,22 @@ public class LocationController {
             summary = "Create a new location",
             description = "Creates a new storage location with the specified room number"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Location created successfully",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = Location.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid request body",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(example = "{\"error\": \"Room number is required\"}")
-                    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "Location created successfully",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Location.class)
             )
-    })
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\"error\": \"Room number is required\"}")
+            )
+    )
     @PostMapping
     public ResponseEntity<?> createLocation(
             @Parameter(
@@ -112,24 +106,22 @@ public class LocationController {
             summary = "Delete a location",
             description = "Deletes a location if no items are assigned to it. Uses soft-delete (sets deletedAt timestamp)."
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "Location deleted successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Location has assigned items and cannot be deleted",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(example = "{\"error\": \"Cannot delete location: 3 items are still assigned to this location\"}")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Location not found"
+    @ApiResponse(
+            responseCode = "204",
+            description = "Location deleted successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Location has assigned items and cannot be deleted",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\"error\": \"Cannot delete location: 3 items are still assigned to this location\"}")
             )
-    })
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Location not found"
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLocation(
             @Parameter(description = "ID of the location to delete") @PathVariable Long id

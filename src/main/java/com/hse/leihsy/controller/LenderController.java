@@ -1,6 +1,5 @@
 package com.hse.leihsy.controller;
 
-import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;

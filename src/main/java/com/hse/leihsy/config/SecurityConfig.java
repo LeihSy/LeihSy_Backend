@@ -117,8 +117,8 @@ public class SecurityConfig {
         // Erlaubte HTTP-Methoden
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // Erlaubte Headers
-        configuration.setAllowedHeaders(List.of("*"));
+        // Erlaubte Headers (nur die notwendigen)
+        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
 
         // Credentials erlauben (fuer Cookies/Auth-Header)
         configuration.setAllowCredentials(true);

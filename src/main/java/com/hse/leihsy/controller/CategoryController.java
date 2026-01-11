@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,9 +34,7 @@ public class CategoryController {
             summary = "Get all categories",
             description = "Returns a list of all active categories"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
     @GetMapping
     public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         List<Category> categories = categoryRepository.findAllActive();
@@ -49,10 +46,8 @@ public class CategoryController {
             summary = "Get category by ID",
             description = "Returns a category with the specified ID"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Category found"),
-            @ApiResponse(responseCode = "404", description = "Category not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Category found")
+    @ApiResponse(responseCode = "404", description = "Category not found")
     @GetMapping("/{id}")
     public ResponseEntity<CategoryDTO> getCategoryById(
             @Parameter(description = "ID of the category to retrieve") @PathVariable Long id) {
@@ -66,24 +61,22 @@ public class CategoryController {
             summary = "Create a new category",
             description = "Creates a new product category with the specified name"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Category created successfully",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = Category.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid request body",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(example = "{\"error\": \"Category name is required\"}")
-                    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "Category created successfully",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Category.class)
             )
-    })
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\"error\": \"Category name is required\"}")
+            )
+    )
     @PostMapping
     public ResponseEntity<?> createCategory(
             @Parameter(
@@ -112,24 +105,22 @@ public class CategoryController {
             summary = "Delete a category",
             description = "Deletes a category if no products are assigned to it. Uses soft-delete (sets deletedAt timestamp)."
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "Category deleted successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Category has assigned products and cannot be deleted",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(example = "{\"error\": \"Cannot delete category: 5 products are still assigned to this category\"}")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Category not found"
+    @ApiResponse(
+            responseCode = "204",
+            description = "Category deleted successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Category has assigned products and cannot be deleted",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\"error\": \"Cannot delete category: 5 products are still assigned to this category\"}")
             )
-    })
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Category not found"
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(
             @Parameter(description = "ID of the category to delete") @PathVariable Long id

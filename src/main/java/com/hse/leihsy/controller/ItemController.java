@@ -11,7 +11,6 @@ import com.hse.leihsy.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -37,9 +36,7 @@ public class ItemController {
     // ========================================
 
     @Operation(summary = "Get all items", description = "Returns a list of all items. Use ?deleted=true to include deleted items.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
     @GetMapping
     public ResponseEntity<List<ItemDTO>> getAllItems(
             @Parameter(description = "Include deleted items") @RequestParam(required = false) Boolean deleted
@@ -54,10 +51,8 @@ public class ItemController {
     }
 
     @Operation(summary = "Get item by ID", description = "Returns an item with the matching ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Item found"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Item found")
+    @ApiResponse(responseCode = "404", description = "Item not found")
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getItemById(
             @Parameter(description = "ID of the item to retrieve") @PathVariable Long id) {
@@ -67,7 +62,7 @@ public class ItemController {
 
 
     @Operation(summary = "Get items by lender", description = "Returns all items assigned to a specific lender")
-    @GetMapping("/lender/{lenderId}")
+    @GetMapping("/by-lender/{lenderId}")
     public ResponseEntity<List<ItemDTO>> getItemsByLender(
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId) {
         List<Item> items = itemService.getItemsByLender(lenderId);
@@ -75,10 +70,8 @@ public class ItemController {
     }
 
     @Operation(summary = "Get all bookings for an item", description = "Returns all bookings for a specific item by item ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Item not found")
     @GetMapping("/{id}/bookings")
     public ResponseEntity<List<BookingDTO>> getBookingsByItemId(
             @Parameter(description = "ID of the item") @PathVariable Long id) {
@@ -91,10 +84,8 @@ public class ItemController {
     // ========================================
 
     @Operation(summary = "Create a new item", description = "Creates a new item with the given data")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Item created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data")
-    })
+    @ApiResponse(responseCode = "201", description = "Item created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request data")
     @PostMapping
     public ResponseEntity<ItemDTO> createItem(
             @Parameter(description = "Item creation data") @Valid @RequestBody ItemCreateRequestDTO request) {
@@ -112,10 +103,8 @@ public class ItemController {
     // ========================================
 
     @Operation(summary = "Update an item", description = "Updates an existing item by ID. Assigns new lender if lenderId is provided.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Item updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Item updated successfully")
+    @ApiResponse(responseCode = "404", description = "Item not found")
     @PutMapping("/{id}")
     public ResponseEntity<ItemDTO> updateItem(
             @Parameter(description = "ID of the item to update") @PathVariable Long id,
@@ -134,10 +123,8 @@ public class ItemController {
     // ========================================
 
     @Operation(summary = "Delete an item", description = "Deletes an item by ID (soft delete)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Item deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
+    @ApiResponse(responseCode = "204", description = "Item deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Item not found")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(
             @Parameter(description = "ID of the item to delete") @PathVariable Long id) {

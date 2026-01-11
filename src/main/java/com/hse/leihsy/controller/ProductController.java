@@ -15,7 +15,6 @@ import com.hse.leihsy.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,9 +41,7 @@ public class ProductController {
             summary = "Get all products with optional filters",
             description = "Returns a list of all products. Supports filtering by search query, category, and location."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "List of products retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "List of products retrieved successfully")
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getAllProducts(
             @Parameter(description = "Search query for full-text search in name and description")
@@ -76,10 +73,8 @@ public class ProductController {
             summary = "Get product by ID",
             description = "Returns a product with matching ID"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product found"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Product found")
+    @ApiResponse(responseCode = "404", description = "Product not found")
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(
             @Parameter(description = "ID of the product to retrieve") @PathVariable Long id) {
@@ -91,10 +86,8 @@ public class ProductController {
             summary = "Get all items of a product",
             description = "Returns a list of all physical items (exemplars) belonging to this product"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Items retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Product not found")
     @GetMapping("/{productId}/items")
     public ResponseEntity<List<ItemDTO>> getProductItems(
             @Parameter(description = "ID of the product") @PathVariable Long productId
@@ -110,10 +103,8 @@ public class ProductController {
             summary = "Create a new product",
             description = "Creates a new product with the given data"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Product created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data")
-    })
+    @ApiResponse(responseCode = "201", description = "Product created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request data")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTO> createProduct(
             @RequestPart("product") String productJson,
@@ -147,10 +138,8 @@ public class ProductController {
             summary = "Update a product",
             description = "Updates an existing product by ID"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Product updated successfully")
+    @ApiResponse(responseCode = "404", description = "Product not found")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTO> updateProduct(
             @Parameter(description = "ID of the product to update") @PathVariable Long id,
@@ -185,10 +174,8 @@ public class ProductController {
             summary = "Delete a product",
             description = "Deletes a product by ID (soft-delete)"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Product deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
+    @ApiResponse(responseCode = "204", description = "Product deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Product not found")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(
             @Parameter(description = "ID of the product to delete") @PathVariable Long id) {

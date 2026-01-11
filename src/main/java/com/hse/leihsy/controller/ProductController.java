@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/products", produces = "application/json")
@@ -36,6 +40,7 @@ public class ProductController {
     private final ProductMapper productMapper;
     private final ItemMapper itemMapper;
     private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     @Operation(
             summary = "Get all products with optional filters",
@@ -113,6 +118,9 @@ public class ProductController {
         try {
             ProductCreateDTO createDTO = objectMapper.readValue(productJson, ProductCreateDTO.class);
 
+            // Manuelle Validierung
+            validateDTO(createDTO);
+
             Product product = new Product();
             product.setName(createDTO.getName());
             product.setDescription(createDTO.getDescription());
@@ -149,6 +157,9 @@ public class ProductController {
         try {
             ProductCreateDTO updateDTO = objectMapper.readValue(productJson, ProductCreateDTO.class);
 
+            // Manuelle Validierung
+            validateDTO(updateDTO);
+
             Product product = new Product();
             product.setName(updateDTO.getName());
             product.setDescription(updateDTO.getDescription());
@@ -181,5 +192,18 @@ public class ProductController {
             @Parameter(description = "ID of the product to delete") @PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Validiert ein DTO manuell und wirft eine ValidationException bei Fehlern
+     */
+    private void validateDTO(ProductCreateDTO dto) {
+        Set<ConstraintViolation<ProductCreateDTO>> violations = validator.validate(dto);
+        if (!violations.isEmpty()) {
+            String errors = violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .collect(Collectors.joining(", "));
+            throw new ValidationException("Validation failed: " + errors);
+        }
     }
 }

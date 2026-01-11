@@ -1,6 +1,7 @@
 package com.hse.leihsy.controller;
 
 import com.hse.leihsy.mapper.LocationMapper;
+import com.hse.leihsy.model.dto.LocationCreateDTO;
 import com.hse.leihsy.model.dto.LocationDTO;
 import com.hse.leihsy.model.entity.Location;
 import com.hse.leihsy.repository.ItemRepository;
@@ -10,8 +11,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,7 +68,7 @@ public class LocationController {
             description = "Location created successfully",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Location.class)
+                    schema = @Schema(implementation = LocationDTO.class)
             )
     )
     @ApiResponse(
@@ -79,27 +80,19 @@ public class LocationController {
             )
     )
     @PostMapping
-    public ResponseEntity<?> createLocation(
+    public ResponseEntity<LocationDTO> createLocation(
             @Parameter(
                     description = "Location data with room number",
                     required = true,
                     schema = @Schema(example = "{\"roomNr\": \"F01.402\"}")
             )
-            @RequestBody Map<String, String> request
+            @Valid @RequestBody LocationCreateDTO request
     ) {
-        String roomNr = request.get("roomNr");
-
-        if (roomNr == null || roomNr.isBlank()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Room number is required"));
-        }
-
         Location location = new Location();
-        location.setRoomNr(roomNr);
+        location.setRoomNr(request.getRoomNr());
 
         Location savedLocation = locationRepository.save(location);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedLocation);
+        return ResponseEntity.status(HttpStatus.CREATED).body(locationMapper.toDTO(savedLocation));
     }
 
     @Operation(

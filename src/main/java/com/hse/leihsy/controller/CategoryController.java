@@ -1,6 +1,7 @@
 package com.hse.leihsy.controller;
 
 import com.hse.leihsy.mapper.CategoryMapper;
+import com.hse.leihsy.model.dto.CategoryCreateDTO;
 import com.hse.leihsy.model.dto.CategoryDTO;
 import com.hse.leihsy.model.entity.Category;
 import com.hse.leihsy.repository.CategoryRepository;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +68,7 @@ public class CategoryController {
             description = "Category created successfully",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Category.class)
+                    schema = @Schema(implementation = CategoryDTO.class)
             )
     )
     @ApiResponse(
@@ -78,27 +80,19 @@ public class CategoryController {
             )
     )
     @PostMapping
-    public ResponseEntity<?> createCategory(
+    public ResponseEntity<CategoryDTO> createCategory(
             @Parameter(
                     description = "Category data with name",
                     required = true,
                     schema = @Schema(example = "{\"name\": \"Audio-Equipment\"}")
             )
-            @RequestBody Map<String, String> request
+            @Valid @RequestBody CategoryCreateDTO request
     ) {
-        String name = request.get("name");
-
-        if (name == null || name.isBlank()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Category name is required"));
-        }
-
         Category category = new Category();
-        category.setName(name);
+        category.setName(request.getName());
 
         Category savedCategory = categoryRepository.save(category);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCategory);
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryMapper.toDTO(savedCategory));
     }
 
     @Operation(

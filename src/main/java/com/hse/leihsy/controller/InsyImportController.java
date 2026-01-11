@@ -6,7 +6,6 @@ import com.hse.leihsy.service.InsyImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -179,7 +178,6 @@ public class InsyImportController {
 
     /**
      * Generiert Mock-Daten mit FESTEN InSy-IDs
-     *
      * InSy-IDs 900001-900010 sind reserviert fuer Mock-Daten.
      * Bei erneutem Aufruf werden existierende PENDING Items aktualisiert statt dupliziert.
      */

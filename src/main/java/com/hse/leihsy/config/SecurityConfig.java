@@ -16,6 +16,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -78,8 +79,24 @@ public class SecurityConfig {
                 // UserSyncFilter NACH der JWT-Authentifizierung einfuegen
                 .addFilterAfter(userSyncFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // H2 Console Frame-Options deaktivieren (nur Development!)
-        http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+        // Security Headers konfigurieren
+        http.headers(headers -> headers
+                // X-Content-Type-Options: nosniff - Verhindert MIME-Sniffing
+                .contentTypeOptions(contentTypeOptions -> {})
+
+                // X-XSS-Protection: 1; mode=block - XSS-Schutz in älteren Browsern
+                .xssProtection(xss -> xss
+                        .headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
+                )
+
+                // X-Frame-Options - Clickjacking-Schutz
+                .frameOptions(frame -> frame.deny())
+
+                // Content-Security-Policy - Kontrolliert erlaubte Ressourcen
+                .contentSecurityPolicy(csp -> csp
+                        .policyDirectives("default-src 'self'; frame-ancestors 'none'; form-action 'self'")
+                )
+        );
 
         return http.build();
     }
@@ -101,7 +118,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
         // Erlaubte Headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(List.of("*"));
 
         // Credentials erlauben (fuer Cookies/Auth-Header)
         configuration.setAllowCredentials(true);

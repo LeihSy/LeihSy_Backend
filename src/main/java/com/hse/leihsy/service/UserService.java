@@ -1,5 +1,8 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ResourceNotFoundException;
+import com.hse.leihsy.exception.UnauthorizedException;
+
 import com.hse.leihsy.model.entity.User;
 import com.hse.leihsy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +71,7 @@ public class UserService {
      */
     public User getUserByName(String name) {
         return userRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("User not found with name: " + name));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with name: " + name));
     }
 
     /**
@@ -83,7 +86,7 @@ public class UserService {
 
             if (authentication == null) {
                 log.error("Authentication is NULL - this should never happen!");
-                throw new RuntimeException("Access Denied: No authentication found");
+                throw new UnauthorizedException("Access Denied: No authentication found");
             }
 
             log.debug("Authentication found: {}", authentication.getClass().getSimpleName());
@@ -91,12 +94,12 @@ public class UserService {
 
             if (!authentication.isAuthenticated()) {
                 log.error("User is not authenticated despite having authentication object");
-                throw new RuntimeException("Access Denied: User not authenticated");
+                throw new UnauthorizedException("Access Denied: User not authenticated");
             }
 
             if (!(authentication.getPrincipal() instanceof Jwt)) {
                 log.error("Principal is not a JWT! Type: {}", authentication.getPrincipal().getClass().getName());
-                throw new RuntimeException("Access Denied: Invalid authentication type");
+                throw new UnauthorizedException("Access Denied: Invalid authentication type");
             }
 
             Jwt jwt = (Jwt) authentication.getPrincipal();

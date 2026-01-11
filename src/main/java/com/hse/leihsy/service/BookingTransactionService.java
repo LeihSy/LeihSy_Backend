@@ -1,5 +1,10 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ConflictException;
+import com.hse.leihsy.exception.ResourceNotFoundException;
+import com.hse.leihsy.exception.TokenExpiredException;
+import com.hse.leihsy.exception.UnauthorizedException;
+import com.hse.leihsy.exception.ValidationException;
 import com.hse.leihsy.exception.InvalidBookingStatusException; // Wichtig: Import prüfen
 import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.dto.TransactionDTO;
@@ -40,7 +45,7 @@ public class BookingTransactionService {
     public TransactionDTO generateToken(Long bookingId) {
         User currentUser = userService.getCurrentUser();
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
 
         // 1. Autorisierung
         boolean isAuthorized = booking.getUser().getId().equals(currentUser.getId()) ||
@@ -48,7 +53,7 @@ public class BookingTransactionService {
 
         if (!isAuthorized) {
             if (!booking.getLender().getId().equals(currentUser.getId())) {
-                throw new RuntimeException("Nur der Entleiher darf den QR-Code für diese Buchung generieren.");
+                throw new UnauthorizedException("Nur der Entleiher darf den QR-Code für diese Buchung generieren.");
             }
         }
 
@@ -88,7 +93,7 @@ public class BookingTransactionService {
                 .build();
 
         BookingTransaction saved = transactionRepository.save(transaction);
-        log.info("Generated NEW token for Booking {}: {}", bookingId, token);
+        log.info("Generated NEW token for Booking {} (type: {})", bookingId, type);
 
         return mapToDTO(saved);
     }
@@ -102,24 +107,24 @@ public class BookingTransactionService {
 
         // 1. Token suchen
         BookingTransaction transaction = transactionRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("QR-Code nicht gefunden oder ungültig."));
+                .orElseThrow(() -> new ResourceNotFoundException("QR-Code nicht gefunden oder ungültig."));
 
         // 2. Token Validierung
         if (!transaction.isValid()) {
             if (transaction.getUsedAt() != null) {
-                throw new RuntimeException("Dieser QR-Code wurde bereits verwendet.");
+                throw new ConflictException("Dieser QR-Code wurde bereits verwendet.");
             }
             if (LocalDateTime.now().isAfter(transaction.getExpiresAt())) {
-                throw new RuntimeException("Dieser QR-Code ist abgelaufen. Bitte generieren Sie einen neuen.");
+                throw new TokenExpiredException("Dieser QR-Code ist abgelaufen. Bitte generieren Sie einen neuen.");
             }
-            throw new RuntimeException("QR-Code ungültig.");
+            throw new ValidationException("QR-Code ungültig.");
         }
 
         Booking booking = transaction.getBooking();
 
         // 3. Autorisierung: Nur der Lender darf scannen
         if (!booking.getLender().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Nur der zuständige Verleiher darf diesen Code scannen.");
+            throw new UnauthorizedException("Nur der zuständige Verleiher darf diesen Code scannen.");
         }
 
         // 4. Status der Buchung erneut prüfen

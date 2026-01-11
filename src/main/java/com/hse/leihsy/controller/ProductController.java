@@ -1,5 +1,7 @@
 package com.hse.leihsy.controller;
 
+import com.hse.leihsy.exception.ValidationException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hse.leihsy.mapper.ItemMapper;
 import com.hse.leihsy.mapper.ProductMapper;
@@ -137,7 +139,7 @@ public class ProductController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(productMapper.toDTO(created));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create product", e);
+            throw new ValidationException("Failed to create product: " + e.getMessage(), e);
         }
     }
 
@@ -175,7 +177,7 @@ public class ProductController {
 
             return ResponseEntity.ok(productMapper.toDTO(updated));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to update product", e);
+            throw new ValidationException("Failed to update product: " + e.getMessage(), e);
         }
     }
 

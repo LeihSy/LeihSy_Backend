@@ -6,6 +6,7 @@ import com.hse.leihsy.mapper.ProductMapper;
 import com.hse.leihsy.model.dto.ItemDTO;
 import com.hse.leihsy.model.dto.ProductCreateDTO;
 import com.hse.leihsy.model.dto.ProductDTO;
+import com.hse.leihsy.model.dto.availablePeriodDTO;
 import com.hse.leihsy.model.entity.Item;
 import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.service.ItemService;
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
 
@@ -102,6 +104,44 @@ public class ProductController {
 
         List<Item> items = itemService.getItemsByProductId(productId);
         return ResponseEntity.ok(itemMapper.toDTOList(items));
+    }
+
+    @Operation(
+            summary = "Get available periods of product",
+            description = "Returns a list of time Periods when the specified amount of items of the product are available"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Time periods retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
+    })
+    @GetMapping("/{productId}/availablePeriods")
+    public ResponseEntity<List<availablePeriodDTO>> getAvailablePeriods(
+            @Parameter(description = "ID of the product") @PathVariable Long productId, @Parameter(description = "Amount of Items that have to be available") int requiredQuantity
+    ) {
+        // Prüfe ob Item existiert
+        productService.getProductById(productId);
+
+        List<availablePeriodDTO> availablePeriods = productService.getAvailablePeriods(productId, requiredQuantity);
+        return ResponseEntity.ok(availablePeriods);
+    }
+
+    @Operation(
+            summary = "Get unavailable periods of product",
+            description = "Returns a list of time Periods when the specified amount of items of the product are unavailable"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Time periods retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
+    })
+    @GetMapping("/{productId}/unavailablePeriods")
+    public ResponseEntity<List<availablePeriodDTO>> getUnavailablePeriods(
+            @Parameter(description = "ID of the product") @PathVariable Long productId, @Parameter(description = "Amount of Items that have to be available") int requiredQuantity
+    ) {
+        // Prüfe ob Item existiert
+        productService.getProductById(productId);
+
+        List<availablePeriodDTO> unavailablePeriods = productService.getUnavailablePeriods(productId, requiredQuantity);
+        return ResponseEntity.ok(unavailablePeriods);
     }
 
     @Operation(

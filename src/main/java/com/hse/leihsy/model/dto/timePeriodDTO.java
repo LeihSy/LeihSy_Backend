@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class availablePeriodDTO {
+public class timePeriodDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 }

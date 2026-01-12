@@ -1,21 +1,20 @@
 package com.hse.leihsy.service;
 
-import com.hse.leihsy.model.dto.BookingDTO;
-import com.hse.leihsy.model.dto.availablePeriodDTO;
+import com.hse.leihsy.model.dto.timePeriodDTO;
 import com.hse.leihsy.model.entity.*;
 import com.hse.leihsy.repository.ProductRepository;
 import com.hse.leihsy.repository.CategoryRepository;
 import com.hse.leihsy.repository.LocationRepository;
-import org.springframework.cglib.core.Local;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
+
 import java.util.List;
 
 @Service
@@ -162,7 +161,7 @@ public class ProductService {
     record BookingEvent(LocalDateTime bookingEventDate, int changeInLendedItems) {} // Für jeden Start / Ende einer Buchung, -1 heißt ein Item wird frei, +1 heißt ein Item wird belegt
 
     // Verfügbare Zeiträume eines Produkts laden
-    public List<availablePeriodDTO> getAvailablePeriods(Long id, int requiredQuantity) {
+    public List<timePeriodDTO> getAvailablePeriods(Long id, int requiredQuantity) {
 
         List<Item> items = itemService.getItemsByProductId(id);
 
@@ -172,7 +171,7 @@ public class ProductService {
             return List.of();
         }
 
-        List<availablePeriodDTO> availablePeriods = new ArrayList<>();
+        List<timePeriodDTO> availablePeriods = new ArrayList<>();
 
         // Zeitstrahl auf dem alle BookingEvents chronologisch aufgelistet werden
         List<BookingEvent> bookingEvents = new ArrayList<>();
@@ -217,7 +216,7 @@ public class ProductService {
             }
             // Wenn Produkt von verfügbar auf nicht verfügbar übergeht
             if(wasAvailableBefore && !isAvailableAfter && !(currentAvailableStart == null)) {
-                availablePeriods.add(new availablePeriodDTO(    // Füge neue Verfügbarkeitsperiode hinzu
+                availablePeriods.add(new timePeriodDTO(    // Füge neue Verfügbarkeitsperiode hinzu
                         currentAvailableStart,
                         bookingEvent.bookingEventDate()
                 ));
@@ -228,7 +227,7 @@ public class ProductService {
         // Zeitraum des letzten Events bis unendlich als verfügbare Zeit angeben
         if(!bookingEvents.isEmpty()) {
             BookingEvent lastBookingEvent = bookingEvents.get(bookingEvents.size() - 1);
-            availablePeriods.add(new availablePeriodDTO(
+            availablePeriods.add(new timePeriodDTO(
                     lastBookingEvent.bookingEventDate(),
                     null
             ));
@@ -237,7 +236,7 @@ public class ProductService {
 
         // Falls keine Zeiträume vorhanden -> Item immer verfügbar
         if(availablePeriods.isEmpty()) {
-            availablePeriods.add(new availablePeriodDTO(
+            availablePeriods.add(new timePeriodDTO(
                     LocalDateTime.now(),
                     null
             ));
@@ -246,13 +245,13 @@ public class ProductService {
     }
 
     // Nicht verfügbare Zeiträume eines Produkts laden
-    public List<availablePeriodDTO> getUnavailablePeriods(Long id, int requiredQuantity) {
+    public List<timePeriodDTO> getUnavailablePeriods(Long id, int requiredQuantity) {
 
         List<Item> items = itemService.getItemsByProductId(id);
 
         int totalItems = items.size();
 
-        List<availablePeriodDTO> unavailablePeriods = new ArrayList<>();
+        List<timePeriodDTO> unavailablePeriods = new ArrayList<>();
 
         // Zeitstrahl auf dem alle BookingEvents chronologisch aufgelistet werden
         List<BookingEvent> bookingEvents = new ArrayList<>();
@@ -300,7 +299,7 @@ public class ProductService {
             }
             // Wenn Produkt von nicht verfügbar auf verfügbar übergeht
             if(wasUnavailableBefore && !isUnavailableAfter && !(currentUnavailableStart == null)) {
-                unavailablePeriods.add(new availablePeriodDTO(    // Füge neue Nichtverfügbarkeitsperiode hinzu
+                unavailablePeriods.add(new timePeriodDTO(    // Füge neue Nichtverfügbarkeitsperiode hinzu
                         currentUnavailableStart,
                         bookingEvent.bookingEventDate()
                 ));

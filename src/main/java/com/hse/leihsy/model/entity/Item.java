@@ -77,6 +77,17 @@ public class Item extends BaseEntity {
                     return !hasReturnDate;
                 });
     }
+    /**
+     * Verwandte Items (Zubehör/Empfehlungen)
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "item_relations",
+            joinColumns = @JoinColumn(name = "item_id"),
+            inverseJoinColumns = @JoinColumn(name = "related_item_id")
+    )
+    @Builder.Default
+    private List<Item> relatedItems = new ArrayList<>();
 
     /**
      * Prüft Verfügbarkeit für einen bestimmten Zeitraum

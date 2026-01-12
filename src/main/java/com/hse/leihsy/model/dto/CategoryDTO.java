@@ -8,14 +8,16 @@ import lombok.*;
  */
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class CategoryDTO {
 
     private Long id;
     private String name;
+    private String icon;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    private Long deviceCount;
     public CategoryDTO(Long id, String name, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;

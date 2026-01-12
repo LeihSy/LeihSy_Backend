@@ -3,12 +3,13 @@ package com.hse.leihsy.repository;
 import com.hse.leihsy.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    List<User> findByNameContainingIgnoreCase(String name);
     /**
      * Findet User anhand der Keycloak unique_id (aus JWT Token)
      * @param uniqueId Die Keycloak Subject ID

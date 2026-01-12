@@ -42,6 +42,10 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         List<Category> categories = categoryRepository.findAllActive();
         List<CategoryDTO> categoryDTOs = categoryMapper.toDTOList(categories);
+        for (CategoryDTO dto : categoryDTOs) {
+            Long count = productRepository.countByCategoryId(dto.getId()); 
+            dto.setDeviceCount(count);
+        }
         return ResponseEntity.ok(categoryDTOs);
     }
 
@@ -154,5 +158,38 @@ public class CategoryController {
         categoryRepository.save(category);
 
         return ResponseEntity.noContent().build();
+    }
+    // ========================================
+    // UPDATE ENDPOINT 
+    // ========================================
+
+    @Operation(
+            summary = "Kategorie aktualisieren",
+            description = "Aktualisiert Name und Icon einer bestehenden Kategorie"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Kategorie aktualisiert"),
+            @ApiResponse(responseCode = "404", description = "Kategorie nicht gefunden")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoryDTO> updateCategory(
+            @Parameter(description = "ID der Kategorie") @PathVariable Long id,
+            @RequestBody Map<String, String> request
+    ) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + id));
+
+        String name = request.get("name");
+        String icon = request.get("icon");
+
+        if (name != null && !name.isBlank()) {
+            category.setName(name);
+        }
+        if (icon != null) {
+            category.setIcon(icon);
+        }
+
+        Category updatedCategory = categoryRepository.save(category);
+        return ResponseEntity.ok(categoryMapper.toDTO(updatedCategory));
     }
 }

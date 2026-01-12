@@ -538,6 +538,16 @@ public class BookingService {
             }
             case "pickup" -> recordPickup(id);
             case "return" -> recordReturn(id);
+            case "reject", "decline" -> {
+                Booking booking = getBookingById(id);
+                // Nachricht speichern bevor storniert wird
+                if (updateDTO.getMessage() != null) {
+                    booking.setMessage(updateDTO.getMessage());
+                    bookingRepository.save(booking);
+                }
+                cancelBooking(id); // Setzt deletedAt (Status REJECTED)
+                yield bookingMapper.toDTO(getBookingById(id));
+            }
             default -> throw new IllegalArgumentException(
                     "Invalid action: " + action +
                             ". Valid values: confirm, select_pickup, propose, pickup, return"

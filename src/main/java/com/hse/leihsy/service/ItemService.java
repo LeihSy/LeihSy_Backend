@@ -151,4 +151,13 @@ public class ItemService {
         getItemById(itemId);
         return bookingRepository.findByItemId(itemId);
     }
+    public Item updateRelatedItems(Long itemId, List<Long> relatedItemIds) {
+        Item item = getItemById(itemId);
+        
+        List<Item> relations = itemRepository.findAllById(relatedItemIds);
+        item.setRelatedItems(relations);
+        
+        return itemRepository.save(item);
+    }
+
 }

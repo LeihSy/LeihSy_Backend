@@ -129,7 +129,22 @@ public class UserController {
         UserDTO dto = convertToDTO(user, List.of());
         return ResponseEntity.ok(dto);
     }
+        /***GET /api/users?name=Max*/
+    @Operation(summary = "User suchen", 
+               description = "Sucht User anhand des Namens (Teilstring). Gibt Liste zurück.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Suche erfolgreich")
+    })
+    @GetMapping
+    public ResponseEntity<List<UserDTO>> searchUsers(@RequestParam(required = false) String name) {
+        List<User> users = userService.searchUsers(name);
 
+        List<UserDTO> dtos = users.stream()
+                .map(user -> convertToDTO(user, List.of())) // Wir übergeben leere Rollen, da wir sie hier nicht brauchen
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
     /**
      * Konvertiert User Entity zu DTO
      */

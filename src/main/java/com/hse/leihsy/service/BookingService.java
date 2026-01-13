@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -213,68 +214,82 @@ public class BookingService {
      * Erstellt eine neue Booking (Einzelbuchung, Rueckwaertskompatibilitaet)
      */
     @Transactional
-    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                    LocalDateTime endDate, String message) {
-        return createBooking(userId, itemId, startDate, endDate, message, null);
+    public List<BookingDTO> createBooking(Long userId, Long productId, LocalDateTime startDate,
+                                          LocalDateTime endDate, String message, int quantity) {
+        return createBooking(userId, productId, startDate, endDate, message, quantity, null);
     }
 
     /**
      * Erstellt eine neue Booking mit optionaler Gruppenzuordnung
      */
     @Transactional
-    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                    LocalDateTime endDate, String message, Long groupId) {
-
-        // Prüfe ob Item existiert und verfügbar ist
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
+    public List<BookingDTO> createBooking(Long userId, Long productId, LocalDateTime startDate,
+                                          LocalDateTime endDate, String message, int quantity, Long groupId) {
 
         // Prüfe ob User existiert
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        // Prüfe Verfügbarkeit (keine überlappenden Bookings)
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(itemId, startDate, endDate);
-        if (!overlapping.isEmpty()) {
-            throw new RuntimeException("Item is not available for the requested period");
-        }
+        List<Item> itemsOfProduct = itemRepository.findByProductId(productId);
 
-        // Verleiher aus Item holen
-        User lender = item.getLender();
-        if (lender == null && item.getProduct() != null) {
-            lender = item.getLender();
-        }
-        if (lender == null) {
-            throw new RuntimeException("No lender assigned to this product");
-        }
+        List<Item> availableItems = new ArrayList<>();
 
-        // Erstelle Booking
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setLender(lender);
-        booking.setItem(item);
-        booking.setStartDate(startDate);
-        booking.setEndDate(endDate);
-        booking.setMessage(message);
-        booking.setStatus(BookingStatus.PENDING.name());
-
-        // Gruppenzuordnung falls angegeben
-        if (groupId != null) {
-            StudentGroup group = studentGroupRepository.findActiveById(groupId)
-                    .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
-
-            // Pruefen ob User Mitglied der Gruppe ist
-            if (!group.isMember(user)) {
-                throw new RuntimeException("User is not a member of the specified group");
+        // Suche nach verfügbaren Items für Produkt
+        for(Item item : itemsOfProduct) {
+            // Verfuegbarkeitsprüfung
+            List<Booking> overlapping = bookingRepository.findOverlappingBookings(item.getId(), startDate, endDate);
+            if (overlapping.isEmpty()) {
+                availableItems.add(item);
             }
-
-            booking.setStudentGroup(group);
-            log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
-                    user.getName(), group.getName(), item.getInvNumber());
+            // Wenn ausreichend verfügbare Items ausgewählt wurden
+            if (availableItems.size() >= quantity) {
+                break;
+            }
         }
+        // Prüfe ob genug Items verfügbar sind
+        if(availableItems.size() >= quantity) {
+            List<Booking> bookings = new ArrayList<>();
 
-        Booking saved = bookingRepository.save(booking);
-        return bookingMapper.toDTO(saved);
+            for(Item item : availableItems) {
+                // Verleiher aus Item holen
+                User lender = item.getLender();
+                if (lender == null && item.getProduct() != null) {
+                    lender = item.getLender();
+                }
+                if (lender == null) {
+                    throw new RuntimeException("No lender assigned to this product");
+                }
+                // Erstelle Booking
+                Booking booking = new Booking();
+                booking.setUser(user);
+                booking.setLender(lender);
+                booking.setItem(item);
+                booking.setStartDate(startDate);
+                booking.setEndDate(endDate);
+                booking.setMessage(message);
+                booking.setStatus(BookingStatus.PENDING.name());
+
+                // Gruppenzuordnung falls angegeben
+                if (groupId != null) {
+                    StudentGroup group = studentGroupRepository.findActiveById(groupId)
+                            .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+
+                    // Pruefen ob User Mitglied der Gruppe ist
+                    if (!group.isMember(user)) {
+                        throw new RuntimeException("User is not a member of the specified group");
+                    }
+
+                    booking.setStudentGroup(group);
+                    log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
+                            user.getName(), group.getName(), item.getInvNumber());
+                }
+                Booking saved = bookingRepository.save(booking);
+                bookings.add(saved);
+            }
+            return bookingMapper.toDTOList(bookings);
+        } else {
+            throw new RuntimeException("Not enough items available for product " + productId);
+        }
     }
 
     // ========================================

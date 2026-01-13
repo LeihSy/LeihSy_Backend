@@ -1,14 +1,19 @@
 package com.hse.leihsy.service;
 
-import com.hse.leihsy.model.entity.Product;
-import com.hse.leihsy.model.entity.Category;
-import com.hse.leihsy.model.entity.Location;
+import com.hse.leihsy.model.dto.timePeriodDTO;
+import com.hse.leihsy.model.entity.*;
 import com.hse.leihsy.repository.ProductRepository;
 import com.hse.leihsy.repository.CategoryRepository;
 import com.hse.leihsy.repository.LocationRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 import java.util.List;
 
@@ -20,14 +25,16 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
     private final ImageService imageService;
+    private final ItemService itemService;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          LocationRepository locationRepository, ImageService imageService) {
+                          LocationRepository locationRepository, ImageService imageService, ItemService itemService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.locationRepository = locationRepository;
         this.imageService = imageService;
+        this.itemService = itemService;
     }
 
     // Alle aktiven Products abrufen
@@ -149,5 +156,157 @@ public class ProductService {
 
         product.softDelete();
         productRepository.save(product);
+    }
+
+    record BookingEvent(LocalDateTime bookingEventDate, int changeInLendedItems) {} // Für jeden Start / Ende einer Buchung, -1 heißt ein Item wird frei, +1 heißt ein Item wird belegt
+
+    // Verfügbare Zeiträume eines Produkts laden
+    public List<timePeriodDTO> getAvailablePeriods(Long id, int requiredQuantity) {
+
+        List<Item> items = itemService.getItemsByProductId(id);
+
+        // Prüfe ob genug Items existieren
+        int totalItems = items.size();
+        if(totalItems < requiredQuantity) {
+            return List.of();
+        }
+
+        List<timePeriodDTO> availablePeriods = new ArrayList<>();
+
+        // Zeitstrahl auf dem alle BookingEvents chronologisch aufgelistet werden
+        List<BookingEvent> bookingEvents = new ArrayList<>();
+
+        for (Item item : items) {
+
+            // Entferne vergangene Bookings
+            List<Booking> bookings = item.getBookings().stream().filter(booking -> booking.getEndDate().isAfter(LocalDateTime.now())).toList();
+
+            for (Booking booking : bookings) {
+                // Für jeden Start auf Zeitstrahl vermerken dass ein Item mehr in use ist
+                bookingEvents.add(new BookingEvent(
+                        booking.getStartDate(),
+                        +1
+                ));
+                // Für jedes Ende auf Zeitstrahl vermerken dass ein Item weniger in use ist
+                bookingEvents.add(new BookingEvent(
+                        booking.getEndDate(),
+                        -1
+                ));
+            }
+        }
+
+        // Sortiere BookingEvents auf Zeistrahl chronologisch
+        bookingEvents.sort(Comparator.comparing(BookingEvent::bookingEventDate));
+
+        int currentLendedItems = 0; // Misst die aktuell verliehene Anzahl an Items des Produkts
+        LocalDateTime currentAvailableStart = null;
+
+        for(BookingEvent bookingEvent : bookingEvents) {
+            int freeItemsBeforeEvent = totalItems - currentLendedItems;
+            boolean wasAvailableBefore = freeItemsBeforeEvent >= requiredQuantity;   // Prüfe ob vor BookingEvent ausreichend Items verfügbar waren
+
+            currentLendedItems += bookingEvent.changeInLendedItems();   // Wende Verfügbarkeitsänderung auf Anzahl ausgeliehener Items an
+
+            int freeItemsAfterEvent = totalItems - currentLendedItems;
+            boolean isAvailableAfter = freeItemsAfterEvent >= requiredQuantity; // Prüfe ob nach BookingEvent noch ausreichend Items verfügbar sind
+
+            // Wenn Produkt von nicht verfügbar auf verfügbar übergeht
+            if(!wasAvailableBefore && isAvailableAfter) {
+                currentAvailableStart = bookingEvent.bookingEventDate();    // Setze Startzeitraum des Items
+            }
+            // Wenn Produkt von verfügbar auf nicht verfügbar übergeht
+            if(wasAvailableBefore && !isAvailableAfter && !(currentAvailableStart == null)) {
+                availablePeriods.add(new timePeriodDTO(    // Füge neue Verfügbarkeitsperiode hinzu
+                        currentAvailableStart,
+                        bookingEvent.bookingEventDate()
+                ));
+                currentAvailableStart = null;
+            }
+        }
+
+        // Zeitraum des letzten Events bis unendlich als verfügbare Zeit angeben
+        if(!bookingEvents.isEmpty()) {
+            BookingEvent lastBookingEvent = bookingEvents.get(bookingEvents.size() - 1);
+            availablePeriods.add(new timePeriodDTO(
+                    lastBookingEvent.bookingEventDate(),
+                    null
+            ));
+        }
+
+
+        // Falls keine Zeiträume vorhanden -> Item immer verfügbar
+        if(availablePeriods.isEmpty()) {
+            availablePeriods.add(new timePeriodDTO(
+                    LocalDateTime.now(),
+                    null
+            ));
+        }
+        return availablePeriods;    // Gebe Liste verfügbarer Zeiträume des Produkts für die benötigte Quantität zurück
+    }
+
+    // Nicht verfügbare Zeiträume eines Produkts laden
+    public List<timePeriodDTO> getUnavailablePeriods(Long id, int requiredQuantity) {
+
+        List<Item> items = itemService.getItemsByProductId(id);
+
+        int totalItems = items.size();
+
+        List<timePeriodDTO> unavailablePeriods = new ArrayList<>();
+
+        // Zeitstrahl auf dem alle BookingEvents chronologisch aufgelistet werden
+        List<BookingEvent> bookingEvents = new ArrayList<>();
+
+        for (Item item : items) {
+
+            // Entferne vergangene Bookings
+            List<Booking> bookings = item.getBookings().stream().filter(booking -> booking.getEndDate().isAfter(LocalDateTime.now())).toList();
+
+            for (Booking booking : bookings) {
+                // Für jeden Start auf Zeitstrahl vermerken dass ein Item mehr in use ist
+                bookingEvents.add(new BookingEvent(
+                        booking.getStartDate(),
+                        +1
+                ));
+                // Für jedes Ende auf Zeitstrahl vermerken dass ein Item weniger in use ist
+                bookingEvents.add(new BookingEvent(
+                        booking.getEndDate(),
+                        -1
+                ));
+            }
+        }
+
+        // Sortiere BookingEvents auf Zeistrahl chronologisch
+        bookingEvents.sort(Comparator.comparing(BookingEvent::bookingEventDate));
+
+        int currentLendedItems = 0; // Misst die aktuell verliehene Anzahl an Items des Produkts
+        LocalDateTime currentUnavailableStart = null;
+
+        for(BookingEvent bookingEvent : bookingEvents) {
+            int freeItemsBeforeEvent = totalItems - currentLendedItems;
+            boolean wasUnavailableBefore = freeItemsBeforeEvent < requiredQuantity;   // Prüfe ob vor BookingEvent nicht ausreichend Items verfügbar waren
+
+            currentLendedItems += bookingEvent.changeInLendedItems();   // Wende Verfügbarkeitsänderung auf Anzahl ausgeliehener Items an
+
+            int freeItemsAfterEvent = totalItems - currentLendedItems;
+            boolean isUnavailableAfter = freeItemsAfterEvent < requiredQuantity; // Prüfe ob nach BookingEvent noch nicht ausreichend Items verfügbar sind
+
+            // Wenn Produkt von verfügbar auf nicht verfügbar übergeht
+            if(!wasUnavailableBefore && isUnavailableAfter) {
+                currentUnavailableStart = bookingEvent.bookingEventDate();    // Setze Startzeitraum des nicht verfügbaren Zeitraums
+                if(currentUnavailableStart.isBefore(LocalDateTime.now())) {
+                    currentUnavailableStart = LocalDateTime.now();
+                }
+            }
+            // Wenn Produkt von nicht verfügbar auf verfügbar übergeht
+            if(wasUnavailableBefore && !isUnavailableAfter && !(currentUnavailableStart == null)) {
+                unavailablePeriods.add(new timePeriodDTO(    // Füge neue Nichtverfügbarkeitsperiode hinzu
+                        currentUnavailableStart,
+                        bookingEvent.bookingEventDate()
+                ));
+                currentUnavailableStart = null;
+            }
+        }
+
+        return unavailablePeriods;    // Gebe Liste verfügbarer Zeiträume des Produkts für die benötigte Quantität zurück
     }
 }

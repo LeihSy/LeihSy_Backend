@@ -133,43 +133,44 @@ public class BookingService {
      * @param status Optional: "overdue", "pending", "confirmed", "picked_up", "returned", "cancelled", "expired", "rejected"
      * @return Liste von BookingDTOs
      */
-public List<BookingDTO> getAllBookings(String status) {
-        List<Booking> bookings;
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime threshold24h = now.minusHours(24);
+    public List<BookingDTO> getAllBookings(String status) {
+    List<Booking> bookings;
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime threshold24h = now.minusHours(24);
 
-        System.out.println("DEBUG: Suche nach Status: " + status);
-
-        if (status == null || status.isBlank()) {
-            bookings = bookingRepository.findAllActive();
-        } else if ("pending".equalsIgnoreCase(status)) {
-            // Spezial-Logik für Pending, um den 24h-Filter zu umgehen
-            bookings = bookingRepository.findAll().stream()
-                    .filter(b -> {
-                        boolean isPendingStr = "PENDING".equalsIgnoreCase(b.getStatus());
-                        boolean isPendingCalc = b.calculateStatus() == BookingStatus.PENDING;
-                        return isPendingStr || isPendingCalc;
-                    })
-                    .toList();
-            System.out.println("DEBUG: PENDING gefunden: " + bookings.size());
-        }else {
-            // Nach Status filtern mit spezifischen Queries
-            bookings = switch (status.toLowerCase()) {
-                case "overdue" -> bookingRepository.findOverdue(now);
-                case "pending" -> bookingRepository.findAllPending(threshold24h);
-                case "confirmed" -> bookingRepository.findAllConfirmed(threshold24h);
-                case "picked_up" -> bookingRepository.findAllPickedUp();
-                case "returned" -> bookingRepository.findAllReturned();
-                case "cancelled" -> bookingRepository.findAllCancelled(threshold24h);
-                case "expired" -> bookingRepository.findAllExpired(threshold24h);
-                case "rejected" -> bookingRepository.findAllRejected();
-                default -> throw new IllegalArgumentException("Invalid status: " + status +
-                        ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected");
-            };
-        }
-
+    if (status == null || status.isBlank()) {
+        bookings = bookingRepository.findAllActive();
         return bookingMapper.toDTOList(bookings);
     }
+
+    switch (status.toLowerCase()) {
+        case "overdue" -> bookings = bookingRepository.findOverdue(now);
+
+        // PENDING
+        case "pending" -> bookings = bookingRepository.findAll().stream()
+                .filter(b -> {
+                    boolean isPendingStr = "PENDING".equalsIgnoreCase(b.getStatus());
+                    boolean isPendingCalc = b.calculateStatus() == BookingStatus.PENDING;
+                    return isPendingStr || isPendingCalc;
+                })
+                .toList();
+
+        case "confirmed" -> bookings = bookingRepository.findAllConfirmed(threshold24h);
+        case "picked_up" -> bookings = bookingRepository.findAllPickedUp();
+        case "returned" -> bookings = bookingRepository.findAllReturned();
+        case "cancelled" -> bookings = bookingRepository.findAllCancelled(threshold24h);
+        case "expired" -> bookings = bookingRepository.findAllExpired(threshold24h);
+        case "rejected" -> bookings = bookingRepository.findAllRejected();
+
+        default -> throw new IllegalArgumentException(
+                "Invalid status: " + status +
+                ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected"
+        );
+    }
+
+    return bookingMapper.toDTOList(bookings);
+}
+
 
     /**
      * Holt bestaetigte, aber noch nicht abgeholte Buchungen (Zukuenftig)
@@ -552,10 +553,10 @@ public List<BookingDTO> getAllBookings(String status) {
             case "reject", "decline" -> {
                 Booking booking = getBookingById(id);
                 // Nachricht speichern bevor storniert wird
-                if (updateDTO.getMessage() != null) {
-                    booking.setMessage(updateDTO.getMessage());
-                    bookingRepository.save(booking);
-                }
+                if (updateDTO.getMessage() != null && !updateDTO.getMessage().isBlank()) {
+                booking.setMessage(updateDTO.getMessage());
+                bookingRepository.save(booking); // Speichern vor dem Stornieren
+            }
                 cancelBooking(id); // Setzt deletedAt (Status REJECTED)
                 yield bookingMapper.toDTO(getBookingById(id));
             }

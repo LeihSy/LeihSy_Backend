@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -207,66 +208,82 @@ public class BookingService {
      * Erstellt eine neue Booking (Einzelbuchung, Rueckwaertskompatibilitaet)
      */
     @Transactional
-    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                    LocalDateTime endDate, String message) {
-        return createBooking(userId, itemId, startDate, endDate, message, null);
+    public List<BookingDTO> createBooking(Long userId, Long productId, LocalDateTime startDate,
+                                    LocalDateTime endDate, String message, int quantity) {
+        return createBooking(userId, productId, startDate, endDate, message, quantity, null);
     }
 
     /**
      * Erstellt eine neue Booking mit optionaler Gruppenzuordnung
      */
     @Transactional
-    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                    LocalDateTime endDate, String message, Long groupId) {
+    public List<BookingDTO> createBooking(Long userId, Long productId, LocalDateTime startDate,
+                                    LocalDateTime endDate, String message, int quantity, Long groupId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
 
-        // Verfuegbarkeitspruefung
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(itemId, startDate, endDate);
-        if (!overlapping.isEmpty()) {
-            throw new RuntimeException("Item is not available for the requested period");
-        }
+        List<Item> itemsOfProduct = itemRepository.findByProductId(productId);
 
-        // Verleiher aus Item holen
-        User lender = item.getLender();
-        if (lender == null && item.getProduct() != null) {
-            lender = item.getLender();
-        }
-        if (lender == null) {
-            throw new RuntimeException("No lender assigned to this product");
-        }
 
-        // Erstelle Booking
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setLender(lender);
-        booking.setItem(item);
-        booking.setStartDate(startDate);
-        booking.setEndDate(endDate);
-        booking.setMessage(message);
-        booking.setStatus(BookingStatus.PENDING.name());
-
-        // Gruppenzuordnung falls angegeben
-        if (groupId != null) {
-            StudentGroup group = studentGroupRepository.findActiveById(groupId)
-                    .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
-
-            // Pruefen ob User Mitglied der Gruppe ist
-            if (!group.isMember(user)) {
-                throw new RuntimeException("User is not a member of the specified group");
+        List<Item> availableItems = new ArrayList<>();
+        for(Item item : itemsOfProduct) {
+            // Verfuegbarkeitsprüfung
+            List<Booking> overlapping = bookingRepository.findOverlappingBookings(item.getId(), startDate, endDate);
+            if (overlapping.isEmpty()) {
+                availableItems.add(item);
             }
-
-            booking.setStudentGroup(group);
-            log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
-                    user.getName(), group.getName(), item.getInvNumber());
+            // Wenn ausreichend verfügbare Items ausgewählt wurden
+            if(availableItems.size() >= quantity) {
+                break;
+            }
         }
 
-        Booking saved = bookingRepository.save(booking);
-        return bookingMapper.toDTO(saved);
+        // Prüfe ob genug Items verfügbar sind
+        if(availableItems.size() >= quantity) {
+            List<Booking> bookings = new ArrayList<>();
+
+            for(Item item : availableItems) {
+                // Verleiher aus Item holen
+                User lender = item.getLender();
+                if (lender == null && item.getProduct() != null) {
+                    lender = item.getLender();
+                }
+                if (lender == null) {
+                    throw new RuntimeException("No lender assigned to this product");
+                }
+                // Erstelle Booking
+                Booking booking = new Booking();
+                booking.setUser(user);
+                booking.setLender(lender);
+                booking.setItem(item);
+                booking.setStartDate(startDate);
+                booking.setEndDate(endDate);
+                booking.setMessage(message);
+                booking.setStatus(BookingStatus.PENDING.name());
+
+                // Gruppenzuordnung falls angegeben
+                if (groupId != null) {
+                    StudentGroup group = studentGroupRepository.findActiveById(groupId)
+                            .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+
+                    // Pruefen ob User Mitglied der Gruppe ist
+                    if (!group.isMember(user)) {
+                        throw new RuntimeException("User is not a member of the specified group");
+                    }
+
+                    booking.setStudentGroup(group);
+                    log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
+                            user.getName(), group.getName(), item.getInvNumber());
+                }
+                Booking saved = bookingRepository.save(booking);
+                bookings.add(saved);
+            }
+            return bookingMapper.toDTOList(bookings);
+        } else {
+            throw new RuntimeException("Not enough items available for product " + productId);
+        }
     }
 
     // ========================================

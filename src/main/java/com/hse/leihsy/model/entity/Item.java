@@ -1,5 +1,5 @@
 package com.hse.leihsy.model.entity;
-
+import com.hse.leihsy.model.entity.Location;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +56,10 @@ public class Item extends BaseEntity {
     @JoinColumn(name = "lender_id")
     private User lender;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private Location location;
+
     /**
      * Buchungen für dieses Item
      */
@@ -106,5 +110,6 @@ public class Item extends BaseEntity {
 
                     return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
                 });
+              
     }
 }

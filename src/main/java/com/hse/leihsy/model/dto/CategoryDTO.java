@@ -1,5 +1,5 @@
 package com.hse.leihsy.model.dto;
-
+import java.util.List;
 import java.time.LocalDateTime;
 import lombok.*;
 
@@ -18,6 +18,7 @@ public class CategoryDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long deviceCount;
+    private List<String> availableLocations;
     public CategoryDTO(Long id, String name, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;

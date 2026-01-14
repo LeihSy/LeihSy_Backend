@@ -13,6 +13,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
 
+    @Mapping(target = "roomNr", source = "item.location.roomNr") 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "userName", source = "user.name")
     @Mapping(target = "lenderId", source = "lender.id")

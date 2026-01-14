@@ -42,10 +42,12 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         List<Category> categories = categoryRepository.findAllActive();
         List<CategoryDTO> categoryDTOs = categoryMapper.toDTOList(categories);
+        
         for (CategoryDTO dto : categoryDTOs) {
             Long count = productRepository.countByCategoryId(dto.getId()); 
             dto.setDeviceCount(count);
         }
+        
         return ResponseEntity.ok(categoryDTOs);
     }
 
@@ -98,6 +100,7 @@ public class CategoryController {
             @RequestBody Map<String, String> request
     ) {
         String name = request.get("name");
+        String icon = request.get("icon");
 
         if (name == null || name.isBlank()) {
             return ResponseEntity
@@ -159,6 +162,7 @@ public class CategoryController {
 
         return ResponseEntity.noContent().build();
     }
+    
     // ========================================
     // UPDATE ENDPOINT 
     // ========================================

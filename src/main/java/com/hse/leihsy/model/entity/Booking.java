@@ -64,6 +64,9 @@ public class Booking extends BaseEntity {
     @Column(name = "confirmed_pickup")
     private LocalDateTime confirmedPickup;
 
+    @ManyToOne(fetch = FetchType.EAGER) //
+    @JoinColumn(name = "location_id")
+    private Location location;
     /**
      * Tatsaechliche Ausgabe (wann wurde das Item uebergeben)
      */

@@ -6,6 +6,7 @@ import com.hse.leihsy.mapper.ProductMapper;
 import com.hse.leihsy.model.dto.ItemDTO;
 import com.hse.leihsy.model.dto.ProductCreateDTO;
 import com.hse.leihsy.model.dto.ProductDTO;
+import com.hse.leihsy.model.dto.timePeriodDTO;
 import com.hse.leihsy.model.entity.Item;
 import com.hse.leihsy.model.entity.Product;
 import com.hse.leihsy.service.ItemService;
@@ -21,7 +22,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -102,6 +105,34 @@ public class ProductController {
 
         List<Item> items = itemService.getItemsByProductId(productId);
         return ResponseEntity.ok(itemMapper.toDTOList(items));
+    }
+
+    @Operation(
+            summary = "Get available / unavailable periods of product",
+            description = "Returns a list of time Periods when the specified amount of items of the product are available / unavailable"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Time periods retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
+    })
+    @GetMapping("/{productId}/periods")
+    public ResponseEntity<List<timePeriodDTO>> getPeriods(
+            @PathVariable Long productId,
+            @RequestParam int requiredQuantity,
+            @RequestParam String type
+    ) {
+        // Prüfe ob Produkt existiert
+        productService.getProductById(productId);
+
+        List<timePeriodDTO> periods = new ArrayList<>();
+
+        if ("available".equals(type)) {
+            periods = productService.getAvailablePeriods(productId, requiredQuantity);
+        } else if ("unavailable".equals(type)) {
+            periods = productService.getUnavailablePeriods(productId, requiredQuantity);
+        }
+
+        return ResponseEntity.ok(periods);
     }
 
     @Operation(

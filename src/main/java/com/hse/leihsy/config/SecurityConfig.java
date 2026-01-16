@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,7 +35,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Oeffentliche Endpoints
                         .requestMatchers("/", "/login", "/error").permitAll()
@@ -89,7 +91,7 @@ public class SecurityConfig {
                 )
 
                 // X-Frame-Options - Clickjacking-Schutz
-                .frameOptions(frame -> frame.deny())
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
 
                 // Content-Security-Policy - Kontrolliert erlaubte Ressourcen
                 .contentSecurityPolicy(csp -> csp

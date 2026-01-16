@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @RestController
@@ -86,7 +87,7 @@ public class ImageController {
             // Fallback: Wenn kein productName, dann Original-Filename verwenden
             String nameToUse = (productName != null && !productName.isBlank())
                     ? productName
-                    : file.getOriginalFilename().replaceFirst("[.][^.]+$", ""); // Ohne Extension
+                    : Objects.requireNonNull(file.getOriginalFilename()).replaceFirst("[.][^.]+$", ""); // Ohne Extension
 
             String filename = imageService.saveImage(file, nameToUse);
             String imageUrl = "/api/images/" + filename;

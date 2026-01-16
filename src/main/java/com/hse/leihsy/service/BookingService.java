@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -141,22 +142,33 @@ public class BookingService {
         LocalDateTime threshold24h = now.minusHours(24);
 
         if (status == null || status.isBlank()) {
-            // Alle Bookings (ohne gelöschte)
             bookings = bookingRepository.findAllActive();
-        } else {
-            // Nach Status filtern mit spezifischen Queries
-            bookings = switch (status.toLowerCase()) {
-                case "overdue" -> bookingRepository.findOverdue(now);
-                case "pending" -> bookingRepository.findAllPending(threshold24h);
-                case "confirmed" -> bookingRepository.findAllConfirmed(threshold24h);
-                case "picked_up" -> bookingRepository.findAllPickedUp();
-                case "returned" -> bookingRepository.findAllReturned();
-                case "cancelled" -> bookingRepository.findAllCancelled(threshold24h);
-                case "expired" -> bookingRepository.findAllExpired(threshold24h);
-                case "rejected" -> bookingRepository.findAllRejected();
-                default -> throw new IllegalArgumentException("Invalid status: " + status +
-                        ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected");
-            };
+            return bookingMapper.toDTOList(bookings);
+        }
+
+        switch (status.toLowerCase()) {
+            case "overdue" -> bookings = bookingRepository.findOverdue(now);
+
+            // PENDING
+            case "pending" -> bookings = bookingRepository.findAll().stream()
+                    .filter(b -> {
+                        boolean isPendingStr = "PENDING".equalsIgnoreCase(b.getStatus());
+                        boolean isPendingCalc = b.calculateStatus() == BookingStatus.PENDING;
+                        return isPendingStr || isPendingCalc;
+                    })
+                    .toList();
+
+            case "confirmed" -> bookings = bookingRepository.findAllConfirmed(threshold24h);
+            case "picked_up" -> bookings = bookingRepository.findAllPickedUp();
+            case "returned" -> bookings = bookingRepository.findAllReturned();
+            case "cancelled" -> bookings = bookingRepository.findAllCancelled(threshold24h);
+            case "expired" -> bookings = bookingRepository.findAllExpired(threshold24h);
+            case "rejected" -> bookings = bookingRepository.findAllRejected();
+
+            default -> throw new IllegalArgumentException(
+                    "Invalid status: " + status +
+                    ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected"
+            );
         }
 
         return bookingMapper.toDTOList(bookings);
@@ -215,68 +227,82 @@ public class BookingService {
      * Erstellt eine neue Booking (Einzelbuchung, Rueckwaertskompatibilitaet)
      */
     @Transactional
-    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                    LocalDateTime endDate, String message) {
-        return createBooking(userId, itemId, startDate, endDate, message, null);
+    public List<BookingDTO> createBooking(Long userId, Long productId, LocalDateTime startDate,
+                                          LocalDateTime endDate, String message, int quantity) {
+        return createBooking(userId, productId, startDate, endDate, message, quantity, null);
     }
 
     /**
      * Erstellt eine neue Booking mit optionaler Gruppenzuordnung
      */
     @Transactional
-    public BookingDTO createBooking(Long userId, Long itemId, LocalDateTime startDate,
-                                    LocalDateTime endDate, String message, Long groupId) {
-
-        // Prüfe ob Item existiert und verfügbar ist
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
+    public List<BookingDTO> createBooking(Long userId, Long productId, LocalDateTime startDate,
+                                          LocalDateTime endDate, String message, int quantity, Long groupId) {
 
         // Prüfe ob User existiert
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        // Prüfe Verfügbarkeit (keine überlappenden Bookings)
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(itemId, startDate, endDate);
-        if (!overlapping.isEmpty()) {
-            throw new ConflictException("Item is not available for the requested period");
-        }
+        List<Item> itemsOfProduct = itemRepository.findByProductId(productId);
 
-        // Verleiher aus Item holen
-        User lender = item.getLender();
-        if (lender == null && item.getProduct() != null) {
-            lender = item.getLender();
-        }
-        if (lender == null) {
-            throw new ValidationException("No lender assigned to this product");
-        }
+        List<Item> availableItems = new ArrayList<>();
 
-        // Erstelle Booking
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setLender(lender);
-        booking.setItem(item);
-        booking.setStartDate(startDate);
-        booking.setEndDate(endDate);
-        booking.setMessage(message);
-        booking.setStatus(BookingStatus.PENDING.name());
-
-        // Gruppenzuordnung falls angegeben
-        if (groupId != null) {
-            StudentGroup group = studentGroupRepository.findActiveById(groupId)
-                    .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
-
-            // Pruefen ob User Mitglied der Gruppe ist
-            if (!group.isMember(user)) {
-                throw new ValidationException("User is not a member of the specified group");
+        // Suche nach verfügbaren Items für Produkt
+        for(Item item : itemsOfProduct) {
+            // Verfuegbarkeitsprüfung
+            List<Booking> overlapping = bookingRepository.findOverlappingBookings(item.getId(), startDate, endDate);
+            if (overlapping.isEmpty()) {
+                availableItems.add(item);
             }
-
-            booking.setStudentGroup(group);
-            log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
-                    user.getName(), group.getName(), item.getInvNumber());
+            // Wenn ausreichend verfügbare Items ausgewählt wurden
+            if (availableItems.size() >= quantity) {
+                break;
+            }
         }
+        // Prüfe ob genug Items verfügbar sind
+        if(availableItems.size() >= quantity) {
+            List<Booking> bookings = new ArrayList<>();
 
-        Booking saved = bookingRepository.save(booking);
-        return bookingMapper.toDTO(saved);
+            for(Item item : availableItems) {
+                // Verleiher aus Item holen
+                User lender = item.getLender();
+                if (lender == null && item.getProduct() != null) {
+                    lender = item.getLender();
+                }
+                if (lender == null) {
+                    throw new RuntimeException("No lender assigned to this product");
+                }
+                // Erstelle Booking
+                Booking booking = new Booking();
+                booking.setUser(user);
+                booking.setLender(lender);
+                booking.setItem(item);
+                booking.setStartDate(startDate);
+                booking.setEndDate(endDate);
+                booking.setMessage(message);
+                booking.setStatus(BookingStatus.PENDING.name());
+
+                // Gruppenzuordnung falls angegeben
+                if (groupId != null) {
+                    StudentGroup group = studentGroupRepository.findActiveById(groupId)
+                            .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+
+                    // Pruefen ob User Mitglied der Gruppe ist
+                    if (!group.isMember(user)) {
+                        throw new RuntimeException("User is not a member of the specified group");
+                    }
+
+                    booking.setStudentGroup(group);
+                    log.info("Gruppenbuchung erstellt: User {} fuer Gruppe '{}', Item {}",
+                            user.getName(), group.getName(), item.getInvNumber());
+                }
+                Booking saved = bookingRepository.save(booking);
+                bookings.add(saved);
+            }
+            return bookingMapper.toDTOList(bookings);
+        } else {
+            throw new RuntimeException("Not enough items available for product " + productId);
+        }
     }
 
     // ========================================
@@ -295,6 +321,18 @@ public class BookingService {
         }
         if (booking.getDeletedAt() != null) {
             throw new IllegalStateException("Cannot confirm cancelled booking");
+        }
+        // Wenn Termine Da sind
+        if (proposedPickups != null && !proposedPickups.isEmpty()) {
+            LocalDateTime selectedDate = proposedPickups.get(0);
+            booking.setConfirmedPickup(selectedDate);
+            // Vorschläge zur Historie
+            String pickupsJson = convertPickupsToJson(proposedPickups);
+            booking.setProposedPickups(pickupsJson);
+
+            log.info("Booking {} sofort bestätigt für: {}", id, selectedDate);
+        } else {
+            throw new IllegalArgumentException("Ein Abholtermin wird benötigt, um die Anfrage anzunehmen.");
         }
 
         String pickupsJson = convertPickupsToJson(proposedPickups);
@@ -540,6 +578,16 @@ public class BookingService {
             }
             case "pickup" -> recordPickup(id);
             case "return" -> recordReturn(id);
+            case "reject", "decline" -> {
+                Booking booking = getBookingById(id);
+                // Nachricht speichern bevor storniert wird
+                if (updateDTO.getMessage() != null && !updateDTO.getMessage().isBlank()) {
+                booking.setMessage(updateDTO.getMessage());
+                bookingRepository.save(booking); // Speichern vor dem Stornieren
+            }
+                cancelBooking(id); // Setzt deletedAt (Status REJECTED)
+                yield bookingMapper.toDTO(getBookingById(id));
+            }
             default -> throw new IllegalArgumentException(
                     "Invalid action: " + action +
                             ". Valid values: confirm, select_pickup, propose, pickup, return"

@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,12 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    public List<User> searchUsers(String query) {
+        if (query == null || query.isBlank()) {
+            return userRepository.findAll(); 
+        }
+        return userRepository.findByNameContainingIgnoreCase(query);
+    }
     /**
      * Holt oder erstellt einen User basierend auf Keycloak-Daten
      * @param uniqueId Keycloak Subject ID

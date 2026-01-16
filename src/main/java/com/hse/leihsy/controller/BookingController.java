@@ -27,6 +27,8 @@ import java.util.List;
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
 @Tag(name = "Bookings", description = "Verwaltung von Ausleih-Buchungen")
+@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*")
+
 public class BookingController {
 
     private final BookingService bookingService;
@@ -100,7 +102,7 @@ public class BookingController {
 
     @Operation(
             summary = "Neue Buchung erstellen",
-            description = "Erstellt eine neue Buchungsanfrage fuer ein Item. Optional kann eine Gruppen-ID angegeben werden fuer Gruppenbuchungen."
+            description = "Erstellt eine neue Buchungsanfrage fuer ein Produkt. Optional kann eine Gruppen-ID angegeben werden fuer Gruppenbuchungen."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -110,23 +112,24 @@ public class BookingController {
             ),
             @ApiResponse(responseCode = "400", description = "Ungueltige Anfrage oder User nicht Mitglied der Gruppe"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "404", description = "Item oder Gruppe nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "Produkt oder Gruppe nicht gefunden")
     })
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<BookingDTO> createBooking(@RequestBody CreateBookingRequest request) {
+    public ResponseEntity<List<BookingDTO>> createBooking(@RequestBody CreateBookingRequest request) {
         User currentUser = userService.getCurrentUser();
 
-        BookingDTO booking = bookingService.createBooking(
+        List<BookingDTO> bookings = bookingService.createBooking(
                 currentUser.getId(),
-                request.getItemId(),
+                request.getProductId(),
                 request.getStartDate(),
                 request.getEndDate(),
                 request.getMessage(),
+                request.getQuantity(),
                 request.getGroupId()
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(booking);
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookings);
     }
 
     // ========================================
@@ -185,8 +188,8 @@ public class BookingController {
     @Getter
     @Setter
     public static class CreateBookingRequest {
-        @Schema(description = "ID des Items", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-        private Long itemId;
+        @Schema(description = "ID des Produkts", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+        private Long productId;
 
         @Schema(description = "Gewuenschter Ausleihbeginn", example = "2025-12-10T09:00:00", requiredMode = Schema.RequiredMode.REQUIRED)
         private LocalDateTime startDate;
@@ -196,6 +199,9 @@ public class BookingController {
 
         @Schema(description = "Optionale Nachricht an den Verleiher", example = "Brauche es fuer Projekt")
         private String message;
+
+        @Schema(description = "Gewünschte Anzahl", example = "4")
+        private int quantity;
 
         @Schema(description = "Optionale Gruppen-ID fuer Gruppenbuchungen. NULL = Einzelbuchung", example = "5")
         private Long groupId;

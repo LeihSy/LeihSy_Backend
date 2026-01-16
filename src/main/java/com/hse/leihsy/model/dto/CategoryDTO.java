@@ -1,5 +1,5 @@
 package com.hse.leihsy.model.dto;
-
+import java.util.List;
 import java.time.LocalDateTime;
 import lombok.*;
 
@@ -8,14 +8,17 @@ import lombok.*;
  */
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class CategoryDTO {
 
     private Long id;
     private String name;
+    private String icon;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    private Long deviceCount;
+    private List<String> availableLocations;
     public CategoryDTO(Long id, String name, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;

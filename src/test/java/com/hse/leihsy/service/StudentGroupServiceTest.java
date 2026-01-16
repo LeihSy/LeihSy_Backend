@@ -93,8 +93,6 @@ class StudentGroupServiceTest {
 
             // Assert
             verify(groupRepository).save(any(StudentGroup.class));
-            // Verify that logic attempts to add current user
-            // (Kann man schwer direkt im Mock prüfen, aber indirekt via save)
         }
 
         @Test
@@ -252,8 +250,6 @@ class StudentGroupServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
             // Act & Assert
-            // Laut StudentGroup.java gibt removeMember false zurück wenn man Owner löschen will
-            // Der Service wirft dann IllegalArgumentException
             assertThatThrownBy(() -> studentGroupService.removeMember(10L, 1L))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Ersteller kann nicht");

@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +24,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/locations", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Location Management", description = "APIs for managing storage locations")
 public class LocationController {
@@ -79,6 +79,7 @@ public class LocationController {
                     schema = @Schema(example = "{\"error\": \"Room number is required\"}")
             )
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<LocationDTO> createLocation(
             @Parameter(
@@ -115,6 +116,7 @@ public class LocationController {
             responseCode = "404",
             description = "Location not found"
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLocation(
             @Parameter(description = "ID of the location to delete") @PathVariable Long id

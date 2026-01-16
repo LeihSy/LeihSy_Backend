@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +24,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/categories", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Category Management", description = "APIs for managing product categories")
 public class CategoryController {
@@ -85,6 +85,7 @@ public class CategoryController {
                     schema = @Schema(example = "{\"error\": \"Category name is required\"}")
             )
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CategoryDTO> createCategory(
             @Parameter(
@@ -121,6 +122,7 @@ public class CategoryController {
             responseCode = "404",
             description = "Category not found"
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(
             @Parameter(description = "ID of the category to delete") @PathVariable Long id
@@ -155,10 +157,9 @@ public class CategoryController {
             summary = "Kategorie aktualisieren",
             description = "Aktualisiert Name und Icon einer bestehenden Kategorie"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Kategorie aktualisiert"),
-            @ApiResponse(responseCode = "404", description = "Kategorie nicht gefunden")
-    })
+    @ApiResponse(responseCode = "200", description = "Kategorie aktualisiert")
+    @ApiResponse(responseCode = "404", description = "Kategorie nicht gefunden")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryDTO> updateCategory(
             @Parameter(description = "ID der Kategorie") @PathVariable Long id,

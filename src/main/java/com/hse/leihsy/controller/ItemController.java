@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import lombok.Data;
@@ -23,7 +24,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/items", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "item-controller", description = "APIs for managing physical items (exemplars)")
 public class ItemController {
@@ -38,6 +38,7 @@ public class ItemController {
 
     @Operation(summary = "Get all items", description = "Returns a list of all items. Use ?deleted=true to include deleted items.")
     @ApiResponse(responseCode = "200", description = "Items retrieved successfully")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<ItemDTO>> getAllItems(
             @Parameter(description = "Include deleted items") @RequestParam(required = false) Boolean deleted
@@ -54,6 +55,7 @@ public class ItemController {
     @Operation(summary = "Get item by ID", description = "Returns an item with the matching ID")
     @ApiResponse(responseCode = "200", description = "Item found")
     @ApiResponse(responseCode = "404", description = "Item not found")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getItemById(
             @Parameter(description = "ID of the item to retrieve") @PathVariable Long id) {
@@ -63,6 +65,7 @@ public class ItemController {
 
 
     @Operation(summary = "Get items by lender", description = "Returns all items assigned to a specific lender")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-lender/{lenderId}")
     public ResponseEntity<List<ItemDTO>> getItemsByLender(
             @Parameter(description = "ID of the lender") @PathVariable Long lenderId) {
@@ -73,6 +76,7 @@ public class ItemController {
     @Operation(summary = "Get all bookings for an item", description = "Returns all bookings for a specific item by item ID")
     @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
     @ApiResponse(responseCode = "404", description = "Item not found")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}/bookings")
     public ResponseEntity<List<BookingDTO>> getBookingsByItemId(
             @Parameter(description = "ID of the item") @PathVariable Long id) {
@@ -87,6 +91,7 @@ public class ItemController {
     @Operation(summary = "Create a new item", description = "Creates a new item with the given data")
     @ApiResponse(responseCode = "201", description = "Item created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request data")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ItemDTO> createItem(
             @Parameter(description = "Item creation data") @Valid @RequestBody ItemCreateRequestDTO request) {
@@ -106,6 +111,7 @@ public class ItemController {
     @Operation(summary = "Update an item", description = "Updates an existing item by ID. Assigns new lender if lenderId is provided.")
     @ApiResponse(responseCode = "200", description = "Item updated successfully")
     @ApiResponse(responseCode = "404", description = "Item not found")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ItemDTO> updateItem(
             @Parameter(description = "ID of the item to update") @PathVariable Long id,
@@ -126,6 +132,7 @@ public class ItemController {
     @Operation(summary = "Delete an item", description = "Deletes an item by ID (soft delete)")
     @ApiResponse(responseCode = "204", description = "Item deleted successfully")
     @ApiResponse(responseCode = "404", description = "Item not found")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(
             @Parameter(description = "ID of the item to delete") @PathVariable Long id) {
@@ -141,10 +148,9 @@ public class ItemController {
             summary = "Verwandte Gegenstände setzen",
             description = "Setzt die Liste der empfohlenen oder erforderlichen Gegenstände für ein Item."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Beziehungen aktualisiert"),
-            @ApiResponse(responseCode = "404", description = "Item nicht gefunden")
-    })
+    @ApiResponse(responseCode = "200", description = "Beziehungen aktualisiert")
+    @ApiResponse(responseCode = "404", description = "Item nicht gefunden")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/related")
     public ResponseEntity<ItemDTO> updateRelatedItems(
             @Parameter(description = "ID des Haupt-Items") @PathVariable Long id,

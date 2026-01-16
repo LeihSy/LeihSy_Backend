@@ -48,8 +48,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui.html/**", "/v3/api-docs/**").permitAll()
 
-                        // Bilder oeffentlich zugaenglich (fuer Katalog-Ansicht)
-                        .requestMatchers("/api/images/**").permitAll()
+                        // Bilder oeffentlich zugaenglich (fuer Katalog-Ansicht) - NUR GET
+                        .requestMatchers("GET", "/api/images/**").permitAll()
 
                         // Products GET-Endpoints oeffentlich (fuer Katalog)
                         .requestMatchers("GET", "/api/products/**").permitAll()

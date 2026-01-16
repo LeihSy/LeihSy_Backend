@@ -140,11 +140,12 @@ public class UserController {
         return ResponseEntity.ok(dto);
     }
         /***GET /api/users?name=Max*/
-    @Operation(summary = "User suchen", 
+    @Operation(summary = "User suchen",
                description = "Sucht User anhand des Namens (Teilstring). Gibt Liste zurück.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Suche erfolgreich")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<UserDTO>> searchUsers(@RequestParam(required = false) String name) {
         List<User> users = userService.searchUsers(name);

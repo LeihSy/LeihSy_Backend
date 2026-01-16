@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -111,10 +112,8 @@ public class ProductController {
             summary = "Get available / unavailable periods of product",
             description = "Returns a list of time Periods when the specified amount of items of the product are available / unavailable"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Time periods retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Time periods retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Product not found")
     @GetMapping("/{productId}/periods")
     public ResponseEntity<List<timePeriodDTO>> getPeriods(
             @PathVariable Long productId,
@@ -141,6 +140,8 @@ public class ProductController {
     )
     @ApiResponse(responseCode = "201", description = "Product created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request data")
+    @ApiResponse(responseCode = "403", description = "Forbidden - Admin only")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTO> createProduct(
             @RequestPart("product") String productJson,
@@ -178,7 +179,9 @@ public class ProductController {
             description = "Updates an existing product by ID"
     )
     @ApiResponse(responseCode = "200", description = "Product updated successfully")
+    @ApiResponse(responseCode = "403", description = "Forbidden - Admin only")
     @ApiResponse(responseCode = "404", description = "Product not found")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductDTO> updateProduct(
             @Parameter(description = "ID of the product to update") @PathVariable Long id,
@@ -217,7 +220,9 @@ public class ProductController {
             description = "Deletes a product by ID (soft-delete)"
     )
     @ApiResponse(responseCode = "204", description = "Product deleted successfully")
+    @ApiResponse(responseCode = "403", description = "Forbidden - Admin only")
     @ApiResponse(responseCode = "404", description = "Product not found")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(
             @Parameter(description = "ID of the product to delete") @PathVariable Long id) {

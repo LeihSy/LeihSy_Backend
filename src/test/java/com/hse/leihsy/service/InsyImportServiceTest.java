@@ -39,8 +39,6 @@ class InsyImportServiceTest {
     @Mock
     private LocationRepository locationRepository;
     @Mock
-    private UserRepository userRepository;
-    @Mock
     private InsyImportMapper importMapper;
 
     @InjectMocks

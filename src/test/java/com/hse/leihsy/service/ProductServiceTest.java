@@ -37,12 +37,6 @@ class ProductServiceTest {
     @Mock
     private LocationRepository locationRepository;
 
-    @Mock
-    private ImageService imageService;
-
-    @Mock
-    private ItemService itemService;
-
     @InjectMocks
     private ProductService productService;
 

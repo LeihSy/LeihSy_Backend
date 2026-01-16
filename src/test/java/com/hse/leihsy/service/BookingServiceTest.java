@@ -7,9 +7,6 @@ import com.hse.leihsy.mapper.BookingMapper;
 import com.hse.leihsy.model.dto.BookingDTO;
 import com.hse.leihsy.model.entity.*;
 import com.hse.leihsy.repository.BookingRepository;
-import com.hse.leihsy.repository.ItemRepository;
-import com.hse.leihsy.repository.StudentGroupRepository;
-import com.hse.leihsy.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,28 +33,10 @@ class BookingServiceTest {
     private BookingRepository bookingRepository;
 
     @Mock
-    private ItemRepository itemRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private StudentGroupRepository studentGroupRepository;
-
-    @Mock
     private ObjectMapper objectMapper;
 
     @Mock
     private BookingMapper bookingMapper;
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private EmailService emailService;
-
-    @Mock
-    private PdfGenerationService pdfService;
 
     @InjectMocks
     private BookingService bookingService;

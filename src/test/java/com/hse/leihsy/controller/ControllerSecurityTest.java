@@ -1,6 +1,5 @@
 package com.hse.leihsy.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hse.leihsy.config.SecurityConfig;
 import com.hse.leihsy.config.UserSyncFilter;
 import com.hse.leihsy.mapper.ItemMapper;
@@ -11,7 +10,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,14 +62,6 @@ class ControllerSecurityTest {
 
     @MockitoBean
     private ItemMapper itemMapper;
-
-    // Diese Beans werden vom Controller Konstruktor benötigt
-    @Autowired
-    private Validator validator;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
 
     @BeforeEach
     void setUp() throws ServletException, IOException {

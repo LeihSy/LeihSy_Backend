@@ -8,12 +8,14 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import java.time.LocalDateTime;
 import com.hse.leihsy.model.entity.BookingStatus;
+import com.hse.leihsy.model.entity.Item; 
+import com.hse.leihsy.model.entity.BookingStatus;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
 
-    @Mapping(target = "roomNr", source = "item.location.roomNr") 
+    @Mapping(target = "roomNr", expression = "java(resolveRoomNr(booking))")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "userName", source = "user.name")
     @Mapping(target = "lenderId", source = "lender.id")
@@ -34,6 +36,24 @@ public interface BookingMapper {
 
     List<BookingDTO> toDTOList(List<Booking> bookings);
 
+    //Raum suche 
+    default String resolveRoomNr(Booking booking) {
+        if (booking == null || booking.getItem() == null) {
+            return "-";
+        }
+        
+        Item item = booking.getItem();
+        
+        if (item.getLocation() != null && item.getLocation().getRoomNr() != null) {
+            return item.getLocation().getRoomNr();
+        }
+        
+        if (item.getProduct() != null && item.getProduct().getLocation() != null) {
+            return item.getProduct().getLocation().getRoomNr();
+        }
+        
+        return "Unbekannt";
+    }
     // Logik zur Berechnung der Dringlichkeit und Überfälligkeit
     @AfterMapping
     default void calculateComputedFields(Booking booking, @MappingTarget BookingDTO dto) {

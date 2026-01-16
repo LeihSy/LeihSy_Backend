@@ -18,7 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
-
+import lombok.Data;
+import java.util.stream.Collectors;
 import java.util.List;
 
 @RestController
@@ -133,7 +134,7 @@ public class ItemController {
     // DELETE ENDPOINT
     // ========================================
 
-    @Operation(summary = "Delete an item", description = "Deletes an item by ID (soft delete)")
+   @Operation(summary = "Delete an item", description = "Deletes an item by ID (soft delete)")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Item deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Item not found")
@@ -143,5 +144,41 @@ public class ItemController {
             @Parameter(description = "ID of the item to delete") @PathVariable Long id) {
         itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========================================
+    // RELATED ITEMS ENDPOINT
+    // ========================================
+
+    @Operation(
+            summary = "Verwandte Gegenstände setzen",
+            description = "Setzt die Liste der empfohlenen oder erforderlichen Gegenstände für ein Item."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Beziehungen aktualisiert"),
+            @ApiResponse(responseCode = "404", description = "Item nicht gefunden")
+    })
+    @PutMapping("/{id}/related")
+    public ResponseEntity<ItemDTO> updateRelatedItems(
+            @Parameter(description = "ID des Haupt-Items") @PathVariable Long id,
+            @RequestBody List<RelatedItemRequest> relatedItems
+    ) {
+        //Requests zu einer Liste von IDs für den Service
+        List<Long> relatedIds = relatedItems.stream()
+                .map(RelatedItemRequest::getDeviceId)
+                .collect(Collectors.toList());
+
+        Item item = itemService.updateRelatedItems(id, relatedIds);
+        return ResponseEntity.ok(itemMapper.toDTO(item));
+    }
+
+    // ========================================
+    // INNER CLASSES / DTOs
+    // ========================================
+
+    @Data
+    public static class RelatedItemRequest {
+        private Long deviceId;
+        private String type; // "required" oder "recommended"
     }
 }

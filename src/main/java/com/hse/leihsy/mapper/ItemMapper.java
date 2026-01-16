@@ -18,6 +18,8 @@ public interface ItemMapper {
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
     @Mapping(target = "isAvailable", expression = "java(item.isAvailable())")
+    @Mapping(target = "locationId", source = "location.id")
+    @Mapping(target = "roomNr", source = "location.roomNr")
     ItemDTO toDTO(Item item);
 
     List<ItemDTO> toDTOList(List<Item> items);

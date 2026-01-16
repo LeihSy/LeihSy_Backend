@@ -1,5 +1,5 @@
 package com.hse.leihsy.model.entity;
-
+import com.hse.leihsy.model.entity.Location;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +56,10 @@ public class Item extends BaseEntity {
     @JoinColumn(name = "lender_id")
     private User lender;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private Location location;
+
     /**
      * Buchungen für dieses Item
      */
@@ -77,6 +81,17 @@ public class Item extends BaseEntity {
                     return !hasReturnDate;
                 });
     }
+    /**
+     * Verwandte Items (Zubehör/Empfehlungen)
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "item_relations",
+            joinColumns = @JoinColumn(name = "item_id"),
+            inverseJoinColumns = @JoinColumn(name = "related_item_id")
+    )
+    @Builder.Default
+    private List<Item> relatedItems = new ArrayList<>();
 
     /**
      * Prüft Verfügbarkeit für einen bestimmten Zeitraum
@@ -95,5 +110,6 @@ public class Item extends BaseEntity {
 
                     return !startDate.isAfter(bookingEnd) && !endDate.isBefore(bookingStart);
                 });
+              
     }
 }

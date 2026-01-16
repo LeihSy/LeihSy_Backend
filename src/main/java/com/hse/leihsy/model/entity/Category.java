@@ -31,6 +31,8 @@ public class Category extends BaseEntity {
     @JsonIgnore
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<Product> products = new ArrayList<>();
+    @Column(name = "icon", length = 50)
+    private String icon;
 
     // Constructors
 

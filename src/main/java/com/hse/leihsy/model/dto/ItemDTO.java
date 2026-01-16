@@ -21,6 +21,11 @@ import lombok.*;
 @Setter
 @Schema(description = "Response DTO for a physical item (exemplar)")
 public class ItemDTO {
+    @Schema(description = "Location ID", example = "1")
+    private Long locationId;
+    
+    @Schema(description = "Room number / Campus", example = "F01.402")
+    private String roomNr;
 
     @Schema(description = "Unique identifier", example = "1")
     private Long id;

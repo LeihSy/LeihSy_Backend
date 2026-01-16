@@ -1,13 +1,10 @@
 package com.hse.leihsy.exception;
 
-import com.hse.leihsy.config.TestSecurityConfig;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,13 +12,23 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = GlobalExceptionHandlerTest.TestExceptionController.class)
-@Import({TestSecurityConfig.class, GlobalExceptionHandler.class})
-@ActiveProfiles("test")
+/**
+ * Standalone Test für GlobalExceptionHandler ohne Spring Context
+ * Dieser Ansatz ist einfacher und schneller als @WebMvcTest,
+ * da kein vollständiger Spring Context benötigt wird.
+ */
 class GlobalExceptionHandlerTest {
 
-    @Autowired
     private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        // Manuelles Setup von MockMvc mit Controller und ExceptionHandler
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new TestExceptionController())
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
 
     @Test
     void testResourceNotFoundException_Returns404() throws Exception {
@@ -97,11 +104,10 @@ class GlobalExceptionHandlerTest {
 
     /**
      * Test Controller that throws various exceptions for testing
-     * to ensure proper Spring component scanning in tests
      */
     @RestController
     @RequestMapping("/test")
-    public static class TestExceptionController {
+    static class TestExceptionController {
 
         @GetMapping("/not-found")
         public void throwResourceNotFoundException() {

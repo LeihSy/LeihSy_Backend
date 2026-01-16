@@ -126,6 +126,7 @@ class BookingRepositoryTest {
             entityManager.flush();
 
             List<Booking> result = bookingRepository.findByUserId(testUser.getId());
+
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().getDeletedAt()).isNull();
         }
@@ -155,18 +156,19 @@ class BookingRepositoryTest {
         @DisplayName("Sollte überlappende Bookings finden")
         void shouldFindOverlappingBookings() {
             Booking booking = createBooking(BookingStatus.CONFIRMED);
-            booking.setStartDate(LocalDateTime.now().plusDays(1));
-            booking.setEndDate(LocalDateTime.now().plusDays(7));
+            booking.setStartDate(LocalDateTime.now().plusDays(10));
+            booking.setEndDate(LocalDateTime.now().plusDays(15));
             entityManager.persist(booking);
             entityManager.flush();
 
             List<Booking> result = bookingRepository.findOverlappingBookings(
                     testItem.getId(),
-                    LocalDateTime.now().plusDays(3),
-                    LocalDateTime.now().plusDays(10)
+                    LocalDateTime.now().plusDays(12),
+                    LocalDateTime.now().plusDays(20)
             );
 
             assertThat(result).hasSize(1);
+            assertThat(result.getFirst().getId()).isEqualTo(booking.getId());
         }
 
         @Test
@@ -180,8 +182,8 @@ class BookingRepositoryTest {
 
             List<Booking> result = bookingRepository.findOverlappingBookings(
                     testItem.getId(),
-                    LocalDateTime.now().plusDays(10),
-                    LocalDateTime.now().plusDays(15)
+                    LocalDateTime.now().plusDays(20),
+                    LocalDateTime.now().plusDays(25)
             );
 
             assertThat(result).isEmpty();

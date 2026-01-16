@@ -306,6 +306,18 @@ public class BookingService {
         if (booking.getDeletedAt() != null) {
             throw new IllegalStateException("Cannot confirm cancelled booking");
         }
+        // Wenn Termine Da sind 
+        if (proposedPickups != null && !proposedPickups.isEmpty()) {
+            LocalDateTime selectedDate = proposedPickups.get(0);
+            booking.setConfirmedPickup(selectedDate);
+            // Vorschläge zur Historie
+            String pickupsJson = convertPickupsToJson(proposedPickups);
+            booking.setProposedPickups(pickupsJson);
+            
+            log.info("Booking {} sofort bestätigt für: {}", id, selectedDate);
+        } else {
+            throw new IllegalArgumentException("Ein Abholtermin wird benötigt, um die Anfrage anzunehmen.");
+        }
 
         String pickupsJson = convertPickupsToJson(proposedPickups);
         booking.setProposedPickups(pickupsJson);

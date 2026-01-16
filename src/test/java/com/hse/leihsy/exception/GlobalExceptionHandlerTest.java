@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
+@WebMvcTest(controllers = GlobalExceptionHandlerTest.TestExceptionController.class)
 @Import({TestSecurityConfig.class, GlobalExceptionHandler.class})
 @ActiveProfiles("test")
 class GlobalExceptionHandlerTest {
@@ -97,10 +97,11 @@ class GlobalExceptionHandlerTest {
 
     /**
      * Test Controller that throws various exceptions for testing
+     * to ensure proper Spring component scanning in tests
      */
     @RestController
     @RequestMapping("/test")
-    static class TestController {
+    public static class TestExceptionController {
 
         @GetMapping("/not-found")
         public void throwResourceNotFoundException() {

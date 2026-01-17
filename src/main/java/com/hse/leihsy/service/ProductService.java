@@ -253,6 +253,16 @@ public class ProductService {
 
         List<timePeriodDTO> unavailablePeriods = new ArrayList<>();
 
+        // Falls mehr Items angefragt werden als überhaupt im System vorhanden sind
+        if (requiredQuantity > totalItems) {
+            unavailablePeriods.add(new timePeriodDTO(
+                            LocalDateTime.now(),
+                            LocalDateTime.now().plusYears(1)
+                    )
+            );
+            return unavailablePeriods;
+        }
+
         // Zeitstrahl auf dem alle BookingEvents chronologisch aufgelistet werden
         List<BookingEvent> bookingEvents = new ArrayList<>();
 
@@ -306,7 +316,6 @@ public class ProductService {
                 currentUnavailableStart = null;
             }
         }
-
         return unavailablePeriods;    // Gebe Liste verfügbarer Zeiträume des Produkts für die benötigte Quantität zurück
     }
 }

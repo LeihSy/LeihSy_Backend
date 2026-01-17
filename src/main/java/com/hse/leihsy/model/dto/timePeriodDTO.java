@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class timePeriodDTO {
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 }

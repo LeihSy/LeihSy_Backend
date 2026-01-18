@@ -13,6 +13,10 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
+     //Nur aktive Buchungen
+     @Query("SELECT b FROM Booking b WHERE b.lender.id = :lenderId AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
+    List<Booking> findByLenderIdAndDeletedFalse(@Param("lenderId") Long lenderId);
+
     // Buchungen eines Users (als Entleiher)
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     List<Booking> findByUserId(@Param("userId") Long userId);

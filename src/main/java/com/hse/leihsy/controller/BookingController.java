@@ -36,6 +36,12 @@ public class BookingController {
     // ========================================
     // GET ENDPOINTS
     // ========================================
+    @GetMapping("/lender/{lenderId}")
+        public ResponseEntity<List<BookingDTO>> getBookingsByLender(
+                @PathVariable Long lenderId,
+                @RequestParam(required = false, defaultValue = "false") boolean includeDeleted) {
+                
+        return ResponseEntity.ok(bookingService.getBookingsForLender(lenderId, includeDeleted));}
 
     @Operation(
             summary = "Alle Buchungen abrufen mit optionalen Filtern",

@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,18 @@ public class BookingService {
     // ========================================
     // GET METHODEN
     // ========================================
+    
+    public List<BookingDTO> getBookingsForLender(Long lenderId, boolean includeDeleted) {
+        List<Booking> bookings;
+        if (includeDeleted) {
+            bookings = bookingRepository.findByLenderId(lenderId);
+        } else {
+            bookings = bookingRepository.findByLenderIdAndDeletedFalse(lenderId);
+        }
+        return bookings.stream()
+                .map(bookingMapper::toDTO)
+                .collect(Collectors.toList());
+    }
 
     /**
      * Holt alle Bookings als DTOs (Admin-Funktion)

@@ -6,7 +6,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-
+import com.hse.leihsy.repository.ProductSetRepository;
+import com.hse.leihsy.model.entity.ProductSet;
+import com.hse.leihsy.model.entity.ProductRelationType;
 import java.math.BigDecimal;
 
 /**
@@ -23,7 +25,8 @@ public class DataInitializer {
             LocationRepository locationRepo,
             ProductRepository productRepo,
             ItemRepository itemRepo,
-            UserRepository userRepo
+            UserRepository userRepo,
+            ProductSetRepository productSetRepo
     ) {
         return args -> {
             System.out.println("\n========================================");
@@ -250,6 +253,18 @@ public class DataInitializer {
             itemRepo.save(mac2);
 
             System.out.println(itemRepo.count() + " Items erstellt");
+             // ==========================================
+            // ZUSATZGEGENSTÄNDE (SETS) ERSTELLEN 
+            // ==========================================
+            
+            ProductSet set1 = new ProductSet(sonyA7, rodeNT1, ProductRelationType.RECOMMENDED);
+            productSetRepo.save(set1);
+
+            ProductSet set2 = new ProductSet(htcVive, macbookPro, ProductRelationType.REQUIRED);
+            productSetRepo.save(set2);
+
+            System.out.println(productSetRepo.count() + " Zusatzgegenstände (Sets) erstellt!");
+
 
             // ==========================================
             // Zusammenfassung
@@ -262,6 +277,7 @@ public class DataInitializer {
             System.out.println(userRepo.count() + " User");
             System.out.println(productRepo.count() + " Products");
             System.out.println(itemRepo.count() + " Items");
+            System.out.println(productSetRepo.count() + " Sets (Beziehungen)");
             System.out.println("========================================");
             System.out.println("API: http://localhost:8080/api/products");
             System.out.println("Swagger: http://localhost:8080/swagger-ui.html");

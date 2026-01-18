@@ -3,6 +3,7 @@ package com.hse.leihsy.model.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.*;
+import java.util.List; 
 
 @Data
 @NoArgsConstructor
@@ -25,4 +26,5 @@ public class ProductDTO {
     private Long totalItems;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<ProductRelationDTO> relatedItems;
 }

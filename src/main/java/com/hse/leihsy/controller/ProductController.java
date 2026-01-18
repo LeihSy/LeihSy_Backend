@@ -163,7 +163,8 @@ public class ProductController {
                     product,
                     createDTO.getCategoryId(),
                     createDTO.getLocationId(),
-                    image
+                    image,
+                    createDTO.getRelatedItems()
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(productMapper.toDTO(created));
@@ -201,7 +202,9 @@ public class ProductController {
                     product,
                     updateDTO.getCategoryId(),
                     updateDTO.getLocationId(),
-                    image
+                    image,
+                    updateDTO.getRelatedItems()
+                
             );
 
             return ResponseEntity.ok(productMapper.toDTO(updated));

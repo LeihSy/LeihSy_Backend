@@ -5,6 +5,7 @@ import com.hse.leihsy.model.entity.*;
 import com.hse.leihsy.repository.ProductRepository;
 import com.hse.leihsy.repository.CategoryRepository;
 import com.hse.leihsy.repository.LocationRepository;
+import com.hse.leihsy.repository.ProductSetRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,15 +27,20 @@ public class ProductService {
     private final LocationRepository locationRepository;
     private final ImageService imageService;
     private final ItemService itemService;
+    private final ProductSetRepository productSetRepository;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          LocationRepository locationRepository, ImageService imageService, ItemService itemService) {
+                          LocationRepository locationRepository,
+                          ImageService imageService,
+                          ItemService itemService,
+                          ProductSetRepository productSetRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.locationRepository = locationRepository;
         this.imageService = imageService;
         this.itemService = itemService;
+        this.productSetRepository = productSetRepository;
     }
 
     // Alle aktiven Products abrufen
@@ -69,7 +75,7 @@ public class ProductService {
     }
 
     // Neues Product erstellen
-    public Product createProduct(Product product, Long categoryId, Long locationId, MultipartFile image) {
+    public Product createProduct(Product product, Long categoryId, Long locationId, MultipartFile image, List<com.hse.leihsy.model.dto.ProductRelationDTO> relatedItems) {
         // Image Upload handling
         if (image != null && !image.isEmpty()) {
             String filename = imageService.saveImage(image, product.getName());
@@ -88,11 +94,17 @@ public class ProductService {
             product.setLocation(location);
         }
 
-        return productRepository.save(product);
+        // Erst speichern, um ID zu generieren
+        Product savedProduct = productRepository.save(product);
+
+        // Dann Beziehungen speichern
+        saveProductRelations(savedProduct, relatedItems);
+
+        return savedProduct;
     }
 
     // Product aktualisieren
-    public Product updateProduct(Long id, Product updatedProduct, Long categoryId, Long locationId, MultipartFile image) {
+    public Product updateProduct(Long id, Product updatedProduct, Long categoryId, Long locationId, MultipartFile image, List<com.hse.leihsy.model.dto.ProductRelationDTO> relatedItems) {
         Product product = getProductById(id);
 
         // Image Upload handling - altes Bild löschen falls neues kommt
@@ -108,7 +120,7 @@ public class ProductService {
 
             String filename = imageService.saveImage(image, product.getName());
             product.setImageUrl("/api/images/" + filename);
-        }else if (updatedProduct.getImageUrl() == null && product.getImageUrl() != null) {
+        } else if (updatedProduct.getImageUrl() == null && product.getImageUrl() != null) {
             if (product.getImageUrl().startsWith("/api/images/")) {
                 String oldFilename = product.getImageUrl().replace("/api/images/", "");
                 try {
@@ -119,6 +131,7 @@ public class ProductService {
             }
             product.setImageUrl(null);
         }
+
         product.setName(updatedProduct.getName());
         product.setDescription(updatedProduct.getDescription());
         product.setExpiryDate(updatedProduct.getExpiryDate());
@@ -137,7 +150,12 @@ public class ProductService {
             product.setLocation(location);
         }
 
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+
+        // Beziehungen aktualisieren
+        saveProductRelations(savedProduct, relatedItems);
+
+        return savedProduct;
     }
 
     // Product löschen (Soft-Delete)
@@ -156,6 +174,26 @@ public class ProductService {
 
         product.softDelete();
         productRepository.save(product);
+    }
+
+    // Hilfsmethode zum Speichern der Produktbeziehungen
+    private void saveProductRelations(Product parentProduct, List<com.hse.leihsy.model.dto.ProductRelationDTO> relations) {
+        if (relations == null) return;
+
+        // Alte Beziehungen löschen um Duplikate zu vermeiden
+        if (parentProduct.getId() != null) {
+            productSetRepository.deleteByParentProductId(parentProduct.getId());
+        }
+
+        for (var rel : relations) {
+            Product childProduct = productRepository.findById(rel.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Zusatzprodukt nicht gefunden ID: " + rel.getProductId()));
+
+            ProductRelationType type = ProductRelationType.valueOf(rel.getType().toUpperCase());
+
+            ProductSet set = new ProductSet(parentProduct, childProduct, type);
+            productSetRepository.save(set);
+        }
     }
 
     record BookingEvent(LocalDateTime bookingEventDate, int changeInLendedItems) {} // Für jeden Start / Ende einer Buchung, -1 heißt ein Item wird frei, +1 heißt ein Item wird belegt

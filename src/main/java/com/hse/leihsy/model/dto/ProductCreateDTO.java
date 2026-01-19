@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import lombok.*;
+import java.util.List; 
 
 @Data
 @NoArgsConstructor
@@ -34,4 +35,6 @@ public class ProductCreateDTO {
     private Long locationId;
 
     private Long lenderId;
+
+    private List<ProductRelationDTO> relatedItems;
 }

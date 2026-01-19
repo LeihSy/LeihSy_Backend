@@ -38,6 +38,10 @@ public class ProductSet {
     @JoinColumn(name = "id_product_child", nullable = false)
     private Product childProduct;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", length = 20)
+    private ProductRelationType type;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -62,8 +66,9 @@ public class ProductSet {
 
     // Constructors
 
-    public ProductSet(Product parentProduct, Product childProduct) {
+    public ProductSet(Product parentProduct, Product childProduct, ProductRelationType type) {
         this.parentProduct = parentProduct;
         this.childProduct = childProduct;
+        this.type = type;
     }
 }

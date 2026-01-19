@@ -9,3 +9,10 @@ services:
       POSTGRES_PASSWORD: LeihSy
       ALLOWED_ORIGINS: http://localhost:4200
     restart: unless-stopped
+    networks:
+      LeihSy:
+        - ipv4_address: 172.20.0.5
+
+networks:
+    LeihSy:
+      external: true

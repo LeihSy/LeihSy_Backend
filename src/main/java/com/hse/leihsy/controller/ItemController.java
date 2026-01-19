@@ -24,7 +24,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/items", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "item-controller", description = "APIs for managing physical items (exemplars)")
 public class ItemController {

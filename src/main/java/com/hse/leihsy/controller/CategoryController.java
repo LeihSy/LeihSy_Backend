@@ -22,7 +22,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/categories", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Category Management", description = "APIs for managing product categories")
 public class CategoryController {

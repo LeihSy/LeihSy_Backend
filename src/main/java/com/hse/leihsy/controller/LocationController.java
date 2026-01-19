@@ -22,7 +22,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/locations", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Location Management", description = "APIs for managing storage locations")
 public class LocationController {

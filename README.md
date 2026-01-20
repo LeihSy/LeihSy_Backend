@@ -56,7 +56,7 @@ In den Ordner LeihSy_Backend navigieren
 cd LeihSy_Backend
 ```
 
-Verbindungsdetails für die **PostgreSQL Datenbank** und die **Allowed Origins** ändern
+Verbindungsdetails für die **PostgreSQL Datenbank**, die **Allowed Origins** und die Keycloak UserID ändern
 ```bash
 nano docker-compose.yml
 ```
@@ -67,6 +67,7 @@ POSTGRES_URL: Datenbank URL (z.B. jdbc:postgresql://localhost:5432/default_datab
 POSTGRES:USER: Username für die Datenbank
 POSTGRES_PASSWORD: Passwort für die Datenbank
 ALLOWED_ORIGINS: URL des Frontens (z.B. https://leihsy.hs-esslingen.com)
+KEYCLOAK_CLIENTID: ID des CLients in Keycloak (z.B. leihsy-frontend-prod)
 ```
 **Mehrere Origins** können durch ein Komma ohne Leerzeichen getrennt werden
 ```bash

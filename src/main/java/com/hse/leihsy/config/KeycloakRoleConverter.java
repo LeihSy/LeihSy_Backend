@@ -1,5 +1,6 @@
 package com.hse.leihsy.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,7 +25,8 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
     private static final String ROLES_KEY = "roles";
 
     // Client-ID fuer LeihSy in Keycloak
-    private static final String LEIHSY_CLIENT_ID = "leihsy-frontend-dev";
+    @Value("${keycloak.client-id:leihsy-frontend-dev}")
+    private String clientId;
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
@@ -34,7 +36,7 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
         authorities.addAll(extractRealmRoles(jwt));
 
         // 2. Client Roles auslesen (fuer LeihSy)
-        authorities.addAll(extractClientRoles(jwt, LEIHSY_CLIENT_ID));
+        authorities.addAll(extractClientRoles(jwt, clientId));
 
         return authorities;
     }

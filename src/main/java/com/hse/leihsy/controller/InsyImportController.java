@@ -19,7 +19,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/insy", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "insy-import-controller", description = "APIs for managing InSy imports")
 public class InsyImportController {

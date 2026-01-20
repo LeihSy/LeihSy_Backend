@@ -24,7 +24,6 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/images")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Image Management", description = "APIs for uploading, retrieving, and deleting product images")
 public class ImageController {

@@ -56,16 +56,22 @@ In den Ordner LeihSy_Backend navigieren
 cd LeihSy_Backend
 ```
 
-Verbindungsdetails für die PostgreSQL Datenbank ändern
+Verbindungsdetails für die **PostgreSQL Datenbank**, die **Allowed Origins** und die Keycloak UserID ändern
 ```bash
 nano docker-compose.yml
 ```
 
-Wenn Docker Compose nicht verwendet wird können die Verbindungsinformationen für die PostgreSQL Datenbank auch als **Umgebungsvariablen** gesetzt werden.
+Wenn Docker Compose nicht verwendet wird können die **Verbindungsinformationen** für die PostgreSQL Datenbank und die Allowed Origins auch als **Umgebungsvariablen** gesetzt werden.
 ```bash
 POSTGRES_URL: Datenbank URL (z.B. jdbc:postgresql://localhost:5432/default_database)
 POSTGRES:USER: Username für die Datenbank
 POSTGRES_PASSWORD: Passwort für die Datenbank
+ALLOWED_ORIGINS: URL des Frontens (z.B. https://leihsy.hs-esslingen.com)
+KEYCLOAK_CLIENTID: ID des CLients in Keycloak (z.B. leihsy-frontend-prod)
+```
+**Mehrere Origins** können durch ein Komma ohne Leerzeichen getrennt werden
+```bash
+ALLOWED_ORIGINS: z.B. https://leihsy.hs-esslingen.com,http://localhost:4200
 ```
 
 ## Bauen und Deployment
@@ -98,6 +104,15 @@ Die Verbindungsdetails der **PostgreSQL Datenbank** können als Umgebungsvariabl
 POSTGRES_URL: Datenbank URL (z.B. jdbc:postgresql://localhost:5432/default_database)
 POSTGRES:USER: Username für die Datenbank
 POSTGRES_PASSWORD: Passwort für die Datenbank
+```
+
+Die Allowed Origins für das Applikationsprofil application-prod.properties können als Umgebungsvariable gesetzt werden 
+```bash
+ALLOWED_ORIGINS: URL des Frontens (z.B. https://leihsy.hs-esslingen.com)
+```
+Mehrere Origins können durch ein Komma ohne Leerzeichen getrennt werden
+```bash
+ALLOWED_ORIGINS: z.B. https://leihsy.hs-esslingen.com,http://localhost:4200
 ```
 
 Die Abhängigkeiten mit Maven installieren

@@ -7,4 +7,13 @@ services:
       POSTGRES_URL: jdbc:postgresql://193.197.231.126:5432/default_database
       POSTGRES_USER: LeihSy
       POSTGRES_PASSWORD: LeihSy
+      ALLOWED_ORIGINS: http://localhost:4200
+      KEYCLOAK_CLIENTID: leihsy-frontend-dev
     restart: unless-stopped
+    networks:
+      LeihSy:
+        ipv4_address: 172.20.0.2
+
+networks:
+    LeihSy:
+      external: true

@@ -1,5 +1,6 @@
 package com.hse.leihsy.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -22,6 +23,9 @@ import java.util.Arrays;
 @EnableMethodSecurity
 @Profile("!test")
 public class SecurityConfig {
+
+    @Value("${cors.allowed-origins:http://localhost:4200}")
+    private String allowedOrigins;
 
     private final UserSyncFilter userSyncFilter;
 
@@ -93,8 +97,7 @@ public class SecurityConfig {
 
         // Erlaubte Origins (Frontend URL)
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:4200",
-                "https://leihsy.hs-esslingen.de"  // Fuer spaeteres Deployment
+                allowedOrigins
         ));
 
         // Erlaubte HTTP-Methoden

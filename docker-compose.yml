@@ -8,6 +8,7 @@ services:
       POSTGRES_USER: LeihSy
       POSTGRES_PASSWORD: LeihSy
       ALLOWED_ORIGINS: http://localhost:4200
+      KEYCLOAK_CLIENTID: leihsy-frontend-dev
     restart: unless-stopped
     networks:
       LeihSy:

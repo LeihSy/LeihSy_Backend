@@ -1,5 +1,8 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ConflictException;
+import com.hse.leihsy.exception.ResourceNotFoundException;
+
 import com.hse.leihsy.model.entity.Booking;
 import com.hse.leihsy.model.entity.Item;
 import com.hse.leihsy.model.entity.Product;
@@ -37,12 +40,12 @@ public class ItemService {
 
     public Item getItemById(Long id) {
         return itemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Item", id));
     }
 
     public Item getItemByInvNumber(String invNumber) {
         return itemRepository.findByInvNumber(invNumber)
-                .orElseThrow(() -> new RuntimeException("Item nicht gefunden: " + invNumber));
+                .orElseThrow(() -> new ResourceNotFoundException("Item nicht gefunden: " + invNumber));
     }
 
     public List<Item> getItemsByProductId(Long productId) {
@@ -57,16 +60,16 @@ public class ItemService {
 
     public Item createItem(String invNumber, String owner, Long productId, Long lenderId) {
         if (itemRepository.findByInvNumber(invNumber).isPresent()) {
-            throw new RuntimeException("Inventarnummer existiert bereits: " + invNumber);
+            throw new ConflictException("Inventarnummer existiert bereits: " + invNumber);
         }
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
         User lender = null;
         if (lenderId != null) {
             lender = userRepository.findById(lenderId)
-                    .orElseThrow(() -> new RuntimeException("Verleiher nicht gefunden: " + lenderId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Verleiher", lenderId));
         }
 
         Item item = Item.builder()
@@ -81,12 +84,12 @@ public class ItemService {
     public List<Item> createItemSet(String invNumberPrefix, String owner, Long productId, Long lenderId, int count) {
         log.info("Creating item set. Prefix: {}, Count: {}, LenderId: {}", invNumberPrefix, count, lenderId);
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
 
         User lender = null;
         if (lenderId != null) {
             lender = userRepository.findById(lenderId)
-                    .orElseThrow(() -> new RuntimeException("Verleiher nicht gefunden: " + lenderId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Verleiher", lenderId));
         }
 
         List<Item> items = new java.util.ArrayList<>();
@@ -112,7 +115,7 @@ public class ItemService {
         Item item = getItemById(id);
 
         if (!item.getInvNumber().equals(invNumber) && itemRepository.findByInvNumber(invNumber).isPresent()) {
-            throw new RuntimeException("Inventarnummer existiert bereits: " + invNumber);
+            throw new ConflictException("Inventarnummer existiert bereits: " + invNumber);
         }
 
         item.setInvNumber(invNumber);
@@ -120,7 +123,7 @@ public class ItemService {
 
         if (lenderId != null) {
             User lender = userRepository.findById(lenderId)
-                    .orElseThrow(() -> new RuntimeException("Verleiher nicht gefunden: " + lenderId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Verleiher", lenderId));
             item.setLender(lender);
         } else {
             item.setLender(null);

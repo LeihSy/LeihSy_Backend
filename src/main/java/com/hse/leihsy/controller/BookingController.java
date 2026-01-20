@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -26,8 +27,6 @@ import java.util.List;
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
 @Tag(name = "Bookings", description = "Verwaltung von Ausleih-Buchungen")
-@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*")
-
 public class BookingController {
 
     private final BookingService bookingService;
@@ -44,8 +43,10 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Erfolgreich abgerufen"),
             @ApiResponse(responseCode = "400", description = "Ungueltiger Status-Parameter"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Admins")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<BookingDTO>> getAllBookings(
             @Parameter(
@@ -65,8 +66,10 @@ public class BookingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Buchung gefunden"),
             @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Entleiher, Verleiher oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canView(#id, authentication)")
     @GetMapping("/{id}")
     public ResponseEntity<BookingDTO> getBookingById(
             @Parameter(description = "ID der Buchung") @PathVariable Long id) {
@@ -80,8 +83,10 @@ public class BookingController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Buchungen gefunden"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Gruppenmitglieder oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @studentGroupSecurityService.canView(#groupId, authentication)")
     @GetMapping("/groups/{groupId}")
     public ResponseEntity<List<BookingDTO>> getBookingsByGroupId(
             @Parameter(description = "ID der Studentengruppe") @PathVariable Long groupId) {
@@ -107,6 +112,7 @@ public class BookingController {
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
             @ApiResponse(responseCode = "404", description = "Produkt oder Gruppe nicht gefunden")
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<List<BookingDTO>> createBooking(@RequestBody CreateBookingRequest request) {
         User currentUser = userService.getCurrentUser();
@@ -136,8 +142,10 @@ public class BookingController {
             @ApiResponse(responseCode = "200", description = "Status erfolgreich aktualisiert"),
             @ApiResponse(responseCode = "400", description = "Ungueltige Anfrage oder Action"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Entleiher, Verleiher oder Admin"),
             @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canUpdate(#id, authentication)")
     @PatchMapping("/{id}")
     public ResponseEntity<BookingDTO> updateBookingStatus(
             @Parameter(description = "ID der Buchung") @PathVariable Long id,
@@ -159,8 +167,10 @@ public class BookingController {
             @ApiResponse(responseCode = "204", description = "Buchung erfolgreich geloescht"),
             @ApiResponse(responseCode = "400", description = "Loeschen nicht moeglich"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Entleiher, Verleiher oder Admin"),
             @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden")
     })
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canDelete(#id, authentication)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBooking(
             @Parameter(description = "ID der Buchung") @PathVariable Long id) {

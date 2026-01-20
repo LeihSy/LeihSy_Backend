@@ -16,15 +16,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/images")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Image Management", description = "APIs for uploading, retrieving, and deleting product images")
 public class ImageController {
@@ -53,6 +54,10 @@ public class ImageController {
                     )
             ),
             @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authenticated"
+            ),
+            @ApiResponse(
                     responseCode = "500",
                     description = "Internal server error during upload",
                     content = @Content(
@@ -61,6 +66,7 @@ public class ImageController {
                     )
             )
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadImage(
             @Parameter(
@@ -81,7 +87,7 @@ public class ImageController {
             // Fallback: Wenn kein productName, dann Original-Filename verwenden
             String nameToUse = (productName != null && !productName.isBlank())
                     ? productName
-                    : file.getOriginalFilename().replaceFirst("[.][^.]+$", ""); // Ohne Extension
+                    : Objects.requireNonNull(file.getOriginalFilename()).replaceFirst("[.][^.]+$", ""); // Ohne Extension
 
             String filename = imageService.saveImage(file, nameToUse);
             String imageUrl = "/api/images/" + filename;
@@ -153,10 +159,19 @@ public class ImageController {
                     description = "Image deleted successfully"
             ),
             @ApiResponse(
+                    responseCode = "401",
+                    description = "Not authenticated"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Admin only"
+            ),
+            @ApiResponse(
                     responseCode = "404",
                     description = "Image not found"
             )
     })
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{filename}")
     public ResponseEntity<Void> deleteImage(
             @Parameter(

@@ -1,6 +1,7 @@
 package com.hse.leihsy.controller;
 
 import com.hse.leihsy.mapper.CategoryMapper;
+import com.hse.leihsy.model.dto.CategoryCreateDTO;
 import com.hse.leihsy.model.dto.CategoryDTO;
 import com.hse.leihsy.model.entity.Category;
 import com.hse.leihsy.repository.CategoryRepository;
@@ -10,11 +11,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +24,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/categories", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Category Management", description = "APIs for managing product categories")
 public class CategoryController {
@@ -35,19 +36,17 @@ public class CategoryController {
             summary = "Get all categories",
             description = "Returns a list of all active categories"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
-    })
+    @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
     @GetMapping
     public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         List<Category> categories = categoryRepository.findAllActive();
         List<CategoryDTO> categoryDTOs = categoryMapper.toDTOList(categories);
-        
+
         for (CategoryDTO dto : categoryDTOs) {
-            Long count = productRepository.countByCategoryId(dto.getId()); 
+            Long count = productRepository.countByCategoryId(dto.getId());
             dto.setDeviceCount(count);
         }
-        
+
         return ResponseEntity.ok(categoryDTOs);
     }
 
@@ -55,10 +54,8 @@ public class CategoryController {
             summary = "Get category by ID",
             description = "Returns a category with the specified ID"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Category found"),
-            @ApiResponse(responseCode = "404", description = "Category not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Category found")
+    @ApiResponse(responseCode = "404", description = "Category not found")
     @GetMapping("/{id}")
     public ResponseEntity<CategoryDTO> getCategoryById(
             @Parameter(description = "ID of the category to retrieve") @PathVariable Long id) {
@@ -72,71 +69,60 @@ public class CategoryController {
             summary = "Create a new category",
             description = "Creates a new product category with the specified name"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Category created successfully",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = Category.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid request body",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(example = "{\"error\": \"Category name is required\"}")
-                    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "Category created successfully",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = CategoryDTO.class)
             )
-    })
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\"error\": \"Category name is required\"}")
+            )
+    )
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<?> createCategory(
+    public ResponseEntity<CategoryDTO> createCategory(
             @Parameter(
                     description = "Category data with name",
                     required = true,
                     schema = @Schema(example = "{\"name\": \"Audio-Equipment\"}")
             )
-            @RequestBody Map<String, String> request
+            @Valid @RequestBody CategoryCreateDTO request
     ) {
-        String name = request.get("name");
-        String icon = request.get("icon");
-
-        if (name == null || name.isBlank()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Category name is required"));
-        }
-
         Category category = new Category();
-        category.setName(name);
+        category.setName(request.getName());
 
         Category savedCategory = categoryRepository.save(category);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCategory);
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryMapper.toDTO(savedCategory));
     }
 
     @Operation(
             summary = "Delete a category",
             description = "Deletes a category if no products are assigned to it. Uses soft-delete (sets deletedAt timestamp)."
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "Category deleted successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Category has assigned products and cannot be deleted",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(example = "{\"error\": \"Cannot delete category: 5 products are still assigned to this category\"}")
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Category not found"
+    @ApiResponse(
+            responseCode = "204",
+            description = "Category deleted successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Category has assigned products and cannot be deleted",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\"error\": \"Cannot delete category: 5 products are still assigned to this category\"}")
             )
-    })
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Category not found"
+    )
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(
             @Parameter(description = "ID of the category to delete") @PathVariable Long id
@@ -162,19 +148,18 @@ public class CategoryController {
 
         return ResponseEntity.noContent().build();
     }
-    
+
     // ========================================
-    // UPDATE ENDPOINT 
+    // UPDATE ENDPOINT
     // ========================================
 
     @Operation(
             summary = "Kategorie aktualisieren",
             description = "Aktualisiert Name und Icon einer bestehenden Kategorie"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Kategorie aktualisiert"),
-            @ApiResponse(responseCode = "404", description = "Kategorie nicht gefunden")
-    })
+    @ApiResponse(responseCode = "200", description = "Kategorie aktualisiert")
+    @ApiResponse(responseCode = "404", description = "Kategorie nicht gefunden")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryDTO> updateCategory(
             @Parameter(description = "ID der Kategorie") @PathVariable Long id,

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,6 +50,7 @@ public class UserController {
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser() {
         User user = userService.getCurrentUser();
@@ -70,8 +72,10 @@ public class UserController {
             description = "Gibt einen User anhand seiner Datenbank-ID zurueck")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User gefunden"),
-            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "User nicht gefunden"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Daten oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @userSecurityService.canView(#id, authentication)")
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
@@ -85,8 +89,10 @@ public class UserController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Bookings oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @userSecurityService.canView(#userId, authentication)")
     @GetMapping("/{userId}/bookings")
     public ResponseEntity<List<BookingDTO>> getUserBookings(
             @Parameter(description = "ID of the user") @PathVariable Long userId,
@@ -104,8 +110,10 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
-            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "User nicht gefunden"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur eigene Gruppen oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @userSecurityService.canView(#userId, authentication)")
     @GetMapping("/{userId}/groups")
     public ResponseEntity<List<StudentGroupDTO>> getUserGroups(
             @Parameter(description = "ID des Users") @PathVariable Long userId) {
@@ -121,20 +129,23 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User gefunden",
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
-            @ApiResponse(responseCode = "404", description = "User nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "User nicht gefunden"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Admins")
     })
-    @GetMapping("/names/{name}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/by-name/{name}")
     public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String name) {
         User user = userService.getUserByName(name);
         UserDTO dto = convertToDTO(user, List.of());
         return ResponseEntity.ok(dto);
     }
         /***GET /api/users?name=Max*/
-    @Operation(summary = "User suchen", 
+    @Operation(summary = "User suchen",
                description = "Sucht User anhand des Namens (Teilstring). Gibt Liste zurück.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Suche erfolgreich")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<UserDTO>> searchUsers(@RequestParam(required = false) String name) {
         List<User> users = userService.searchUsers(name);

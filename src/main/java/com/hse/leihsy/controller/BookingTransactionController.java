@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +21,7 @@ public class BookingTransactionController {
 
     @Operation(summary = "Token generieren (Student)",
             description = "Erstellt einen temporären Token (15min). Der Typ (PICKUP oder RETURN) wird automatisch anhand des Buchungsstatus ermittelt.")
+    @PreAuthorize("hasRole('ADMIN') or @bookingSecurityService.canView(#bookingId, authentication)")
     @PostMapping("/bookings/{bookingId}/transactions")
     public ResponseEntity<TransactionDTO> generateToken(@PathVariable Long bookingId) {
         TransactionDTO transaction = transactionService.generateToken(bookingId);
@@ -28,6 +30,7 @@ public class BookingTransactionController {
 
     @Operation(summary = "Token einlösen (Verleiher)",
             description = "Löst den Token ein (setzt Status auf USED) und aktualisiert die Buchung (CONFIRMED -> PICKED_UP oder PICKED_UP -> RETURNED).")
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/transactions/{token}")
     public ResponseEntity<BookingDTO> redeemToken(@PathVariable String token) {
         BookingDTO updatedBooking = transactionService.executeTransaction(token);

@@ -129,7 +129,13 @@ class ProductControllerTest {
         responseDTO.setId(10L);
         responseDTO.setName("New VR Headset");
 
-        when(productService.createProduct(any(Product.class), eq(1L), eq(2L), any())).thenReturn(savedProduct);
+        when(productService.createProduct(
+                any(Product.class),
+                eq(1L),
+                eq(2L),
+                any(),
+                any()
+        )).thenReturn(savedProduct);
         when(productMapper.toDTO(savedProduct)).thenReturn(responseDTO);
 
         // Act & Assert
@@ -140,7 +146,13 @@ class ProductControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(10));
 
-        verify(productService).createProduct(any(Product.class), eq(1L), eq(2L), any());
+        verify(productService).createProduct(
+                any(Product.class),
+                eq(1L),
+                eq(2L),
+                any(),
+                any()
+        );
     }
 
     @Test

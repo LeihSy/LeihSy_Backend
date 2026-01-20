@@ -172,7 +172,7 @@ class ProductServiceTest {
             when(locationRepository.findById(1L)).thenReturn(Optional.of(testLocation));
             when(productRepository.save(any(Product.class))).thenReturn(newProduct);
 
-            Product result = productService.createProduct(newProduct, 1L, 1L, null);
+            Product result = productService.createProduct(newProduct, 1L, 1L, null, null);
 
             assertThat(result).isNotNull();
             verify(productRepository).save(any(Product.class));
@@ -184,7 +184,7 @@ class ProductServiceTest {
             Product newProduct = new Product("New Product", "New Description");
             when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> productService.createProduct(newProduct, 999L, null, null))
+            assertThatThrownBy(() -> productService.createProduct(newProduct, 999L, null, null, null))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }

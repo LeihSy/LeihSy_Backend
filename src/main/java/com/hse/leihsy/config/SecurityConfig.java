@@ -24,7 +24,7 @@ import java.util.Arrays;
 @Profile("!test")
 public class SecurityConfig {
 
-    @Value("${cors.allowed-origins}")
+    @Value("${cors.allowed-origins:http://localhost:4200}")
     private String allowedOrigins;
 
     private final UserSyncFilter userSyncFilter;

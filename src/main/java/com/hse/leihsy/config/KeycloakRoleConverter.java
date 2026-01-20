@@ -25,7 +25,7 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
     private static final String ROLES_KEY = "roles";
 
     // Client-ID fuer LeihSy in Keycloak
-    @Value("${keycloak.client-id}")
+    @Value("${keycloak.client-id:leihsy-frontend-dev}")
     private String clientId;
 
     @Override

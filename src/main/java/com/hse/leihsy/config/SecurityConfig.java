@@ -63,6 +63,9 @@ public class SecurityConfig {
                         .requestMatchers("GET", "/api/categories/**").permitAll()
                         .requestMatchers("GET", "/api/locations/**").permitAll()
 
+                        //TEST
+                        .requestMatchers("PATCH", "/api/**").permitAll()
+
                         // User-Info Endpoint (fuer Frontend um aktuellen User zu holen)
                         .requestMatchers("GET", "/api/users/me").authenticated()
 

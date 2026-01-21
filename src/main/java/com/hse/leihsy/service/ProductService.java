@@ -1,5 +1,9 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ResourceNotFoundException;
+import com.hse.leihsy.model.entity.Product;
+import com.hse.leihsy.model.entity.Category;
+import com.hse.leihsy.model.entity.Location;
 import com.hse.leihsy.model.dto.timePeriodDTO;
 import com.hse.leihsy.model.entity.*;
 import com.hse.leihsy.repository.ProductRepository;
@@ -51,7 +55,7 @@ public class ProductService {
     // Product per ID abrufen
     public Product getProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 
     // Products nach Kategorie
@@ -84,13 +88,13 @@ public class ProductService {
 
         if (categoryId != null) {
             Category category = categoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + categoryId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Kategorie", categoryId));
             product.setCategory(category);
         }
 
         if (locationId != null) {
             Location location = locationRepository.findById(locationId)
-                    .orElseThrow(() -> new RuntimeException("Location nicht gefunden: " + locationId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Location", locationId));
             product.setLocation(location);
         }
 
@@ -140,13 +144,13 @@ public class ProductService {
 
         if (categoryId != null) {
             Category category = categoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + categoryId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Kategorie", categoryId));
             product.setCategory(category);
         }
 
         if (locationId != null) {
             Location location = locationRepository.findById(locationId)
-                    .orElseThrow(() -> new RuntimeException("Location nicht gefunden: " + locationId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Location", locationId));
             product.setLocation(location);
         }
 

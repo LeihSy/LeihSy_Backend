@@ -1,5 +1,6 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ResourceNotFoundException;
 import com.hse.leihsy.mapper.StudentGroupMapper;
 import com.hse.leihsy.model.dto.CreateStudentGroupDTO;
 import com.hse.leihsy.model.dto.StudentGroupDTO;
@@ -13,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -279,7 +279,7 @@ public class StudentGroupService {
      */
     private StudentGroup findActiveGroupById(Long id) {
         return groupRepository.findActiveById(id)
-                .orElseThrow(() -> new RuntimeException("Gruppe nicht gefunden mit ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Gruppe", id));
     }
 
     /**

@@ -1,5 +1,8 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ConflictException;
+import com.hse.leihsy.exception.ResourceNotFoundException;
+import com.hse.leihsy.exception.ValidationException;
 import com.hse.leihsy.mapper.InsyImportMapper;
 import com.hse.leihsy.model.dto.*;
 import com.hse.leihsy.model.entity.*;
@@ -55,7 +58,7 @@ public class InsyImportService {
                 return importRepository.save(item);
             } else {
                 log.info("Import item already processed, creating note: id={}, status={}", item.getId(), item.getStatus());
-                throw new RuntimeException("InSy-Eintrag mit ID " + pushData.getInsyId() +
+                throw new ConflictException("InSy-Eintrag mit ID " + pushData.getInsyId() +
                         " wurde bereits verarbeitet (Status: " + item.getStatus() + ")");
             }
         }
@@ -119,7 +122,7 @@ public class InsyImportService {
      */
     public InsyImportItemDTO getById(Long id) {
         InsyImportItem item = importRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Import-Eintrag nicht gefunden: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Import-Eintrag", id));
         return enrichWithMatchingProduct(importMapper.toDTO(item), item);
     }
 
@@ -139,16 +142,16 @@ public class InsyImportService {
      */
     public InsyImportItemDTO importItem(InsyImportRequestDTO request) {
         InsyImportItem importItem = importRepository.findById(request.getImportItemId())
-                .orElseThrow(() -> new RuntimeException("Import-Eintrag nicht gefunden: " + request.getImportItemId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Import-Eintrag nicht gefunden: " + request.getImportItemId()));
 
         if (!importItem.canBeImported()) {
-            throw new RuntimeException("Import-Eintrag kann nicht importiert werden. Status: " + importItem.getStatus());
+            throw new ValidationException("Import-Eintrag kann nicht importiert werden. Status: " + importItem.getStatus());
         }
 
         // Inventarnummer bestimmen (Request > InSy-Wert)
         String invNumber = request.getInvNumber() != null ? request.getInvNumber() : importItem.getInvNumber();
         if (invNumber == null || invNumber.isBlank()) {
-            throw new RuntimeException("Inventarnummer ist erforderlich");
+            throw new ValidationException("Inventarnummer ist erforderlich");
         }
 
         // Pruefen ob Item mit dieser Inventarnummer bereits existiert
@@ -172,20 +175,20 @@ public class InsyImportService {
     public List<InsyImportItemDTO> batchImport(InsyBatchImportRequestDTO request) {
         // Product laden und validieren
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + request.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
 
         // Alle Import-Items laden
         List<InsyImportItem> importItems = importRepository.findPendingByIds(request.getImportItemIds());
 
         if (importItems.size() != request.getImportItemIds().size()) {
-            throw new RuntimeException("Nicht alle Import-Eintraege gefunden oder nicht im Status PENDING");
+            throw new ValidationException("Nicht alle Import-Eintraege gefunden oder nicht im Status PENDING");
         }
 
         // Lender laden falls angegeben
         User lender = null;
         if (request.getLenderId() != null) {
             lender = userRepository.findById(request.getLenderId())
-                    .orElseThrow(() -> new RuntimeException("Lender nicht gefunden: " + request.getLenderId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Lender", request.getLenderId()));
         }
 
         List<InsyImportItemDTO> results = new ArrayList<>();
@@ -241,10 +244,10 @@ public class InsyImportService {
      */
     public InsyImportItemDTO rejectItem(InsyRejectRequestDTO request) {
         InsyImportItem importItem = importRepository.findById(request.getImportItemId())
-                .orElseThrow(() -> new RuntimeException("Import-Eintrag nicht gefunden: " + request.getImportItemId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Import-Eintrag nicht gefunden: " + request.getImportItemId()));
 
         if (!importItem.canBeImported()) {
-            throw new RuntimeException("Import-Eintrag wurde bereits verarbeitet. Status: " + importItem.getStatus());
+            throw new ConflictException("Import-Eintrag wurde bereits verarbeitet. Status: " + importItem.getStatus());
         }
 
         importItem.markAsRejected(request.getReason());
@@ -266,19 +269,19 @@ public class InsyImportService {
         Category category = null;
         if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Kategorie nicht gefunden: " + request.getCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Kategorie", request.getCategoryId()));
         }
 
         Location location = null;
         if (request.getLocationId() != null) {
             location = locationRepository.findById(request.getLocationId())
-                    .orElseThrow(() -> new RuntimeException("Location nicht gefunden: " + request.getLocationId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Location", request.getLocationId()));
         }
 
         User lender = null;
         if (request.getLenderId() != null) {
             lender = userRepository.findById(request.getLenderId())
-                    .orElseThrow(() -> new RuntimeException("Lender nicht gefunden: " + request.getLenderId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Lender", request.getLenderId()));
         }
 
         // Neues Product erstellen
@@ -316,16 +319,16 @@ public class InsyImportService {
      */
     private InsyImportItemDTO importToExistingProduct(InsyImportItem importItem, InsyImportRequestDTO request, String invNumber) {
         if (request.getExistingProductId() == null) {
-            throw new RuntimeException("Product-ID ist erforderlich fuer Import zu bestehendem Product");
+            throw new ValidationException("Product-ID ist erforderlich fuer Import zu bestehendem Product");
         }
 
         Product product = productRepository.findById(request.getExistingProductId())
-                .orElseThrow(() -> new RuntimeException("Product nicht gefunden: " + request.getExistingProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", request.getExistingProductId()));
 
         User lender = null;
         if (request.getLenderId() != null) {
             lender = userRepository.findById(request.getLenderId())
-                    .orElseThrow(() -> new RuntimeException("Lender nicht gefunden: " + request.getLenderId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Lender", request.getLenderId()));
         }
 
         // Neues Item erstellen
@@ -358,7 +361,7 @@ public class InsyImportService {
 
         if (request.getLenderId() != null) {
             User lender = userRepository.findById(request.getLenderId())
-                    .orElseThrow(() -> new RuntimeException("Lender nicht gefunden: " + request.getLenderId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Lender", request.getLenderId()));
             existingItem.setLender(lender);
         }
 
@@ -409,7 +412,7 @@ public class InsyImportService {
         List<Product> matchingProducts = productRepository.searchByName(item.getName());
 
         if (!matchingProducts.isEmpty()) {
-            Product match = matchingProducts.get(0);
+            Product match = matchingProducts.getFirst();
             dto.setHasMatchingProduct(true);
             dto.setMatchingProductId(match.getId());
             dto.setMatchingProductName(match.getName());

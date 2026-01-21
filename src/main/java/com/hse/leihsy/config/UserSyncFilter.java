@@ -152,6 +152,11 @@ public class UserSyncFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
 
+        // Nicht filtern für OPTIONS Preflight
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
         // Nicht filtern für: Swagger, H2-Console, statische Ressourcen
         return path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")

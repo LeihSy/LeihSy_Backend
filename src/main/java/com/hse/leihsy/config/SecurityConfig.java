@@ -39,8 +39,6 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // CORS Preflight
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Oeffentliche Endpoints
                         .requestMatchers("/", "/login", "/error").permitAll()
@@ -62,9 +60,6 @@ public class SecurityConfig {
                         .requestMatchers("GET", "/api/products/**").permitAll()
                         .requestMatchers("GET", "/api/categories/**").permitAll()
                         .requestMatchers("GET", "/api/locations/**").permitAll()
-
-                        //TEST
-                        .requestMatchers("PATCH", "/api/**").permitAll()
 
                         // User-Info Endpoint (fuer Frontend um aktuellen User zu holen)
                         .requestMatchers("GET", "/api/users/me").authenticated()
@@ -122,7 +117,7 @@ public class SecurityConfig {
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/api/**", configuration);
 
         return source;
     }

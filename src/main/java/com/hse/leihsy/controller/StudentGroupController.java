@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,8 +42,10 @@ public class StudentGroupController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Gruppe gefunden"),
             @ApiResponse(responseCode = "404", description = "Gruppe nicht gefunden"),
-            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+            @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung - nur Mitglieder oder Admin")
     })
+    @PreAuthorize("hasRole('ADMIN') or @studentGroupSecurityService.canView(#id, authentication)")
     @GetMapping("/{id}")
     public ResponseEntity<StudentGroupDTO> getGroupById(
             @Parameter(description = "ID der Gruppe") @PathVariable Long id) {
@@ -58,6 +61,7 @@ public class StudentGroupController {
             @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<StudentGroupDTO>> getAllGroups(
             @Parameter(description = "Suchbegriff für Gruppenname (optional)")
@@ -89,6 +93,7 @@ public class StudentGroupController {
             @ApiResponse(responseCode = "400", description = "Ungültige Anfrage (z.B. Name bereits vergeben)"),
             @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<StudentGroupDTO> createGroup(
             @Valid @RequestBody CreateStudentGroupDTO createDTO) {
@@ -111,6 +116,7 @@ public class StudentGroupController {
             @ApiResponse(responseCode = "403", description = "Keine Berechtigung (nicht Owner)"),
             @ApiResponse(responseCode = "404", description = "Gruppe nicht gefunden")
     })
+    @PreAuthorize("hasRole('ADMIN') or @studentGroupSecurityService.canUpdate(#id, authentication)")
     @PatchMapping("/{id}")
     public ResponseEntity<StudentGroupDTO> updateGroup(
             @Parameter(description = "ID der Gruppe") @PathVariable Long id,
@@ -134,6 +140,7 @@ public class StudentGroupController {
             @ApiResponse(responseCode = "403", description = "Keine Berechtigung (kann nur sich selbst oder als Owner andere hinzufügen)"),
             @ApiResponse(responseCode = "404", description = "Gruppe oder User nicht gefunden")
     })
+    @PreAuthorize("hasRole('ADMIN') or @studentGroupSecurityService.canManageMembers(#groupId, #userId, authentication)")
     @PostMapping("/{groupId}/members/{userId}")
     public ResponseEntity<StudentGroupDTO> addMember(
             @Parameter(description = "ID der Gruppe") @PathVariable Long groupId,
@@ -153,6 +160,7 @@ public class StudentGroupController {
             @ApiResponse(responseCode = "403", description = "Keine Berechtigung"),
             @ApiResponse(responseCode = "404", description = "Gruppe oder User nicht gefunden")
     })
+    @PreAuthorize("hasRole('ADMIN') or @studentGroupSecurityService.canManageMembers(#groupId, #userId, authentication)")
     @DeleteMapping("/{groupId}/members/{userId}")
     public ResponseEntity<StudentGroupDTO> removeMember(
             @Parameter(description = "ID der Gruppe") @PathVariable Long groupId,
@@ -176,6 +184,7 @@ public class StudentGroupController {
             @ApiResponse(responseCode = "403", description = "Keine Berechtigung (nicht Owner)"),
             @ApiResponse(responseCode = "404", description = "Gruppe nicht gefunden")
     })
+    @PreAuthorize("hasRole('ADMIN') or @studentGroupSecurityService.canDelete(#id, authentication)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteGroup(
             @Parameter(description = "ID der Gruppe") @PathVariable Long id) {

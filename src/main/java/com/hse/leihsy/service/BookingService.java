@@ -1,5 +1,7 @@
 package com.hse.leihsy.service;
 
+import com.hse.leihsy.exception.ConflictException;
+import com.hse.leihsy.exception.ValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -135,43 +137,42 @@ public class BookingService {
      * @return Liste von BookingDTOs
      */
     public List<BookingDTO> getAllBookings(String status) {
-    List<Booking> bookings;
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime threshold24h = now.minusHours(24);
+        List<Booking> bookings;
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold24h = now.minusHours(24);
 
-    if (status == null || status.isBlank()) {
-        bookings = bookingRepository.findAllActive();
+        if (status == null || status.isBlank()) {
+            bookings = bookingRepository.findAllActive();
+            return bookingMapper.toDTOList(bookings);
+        }
+
+        switch (status.toLowerCase()) {
+            case "overdue" -> bookings = bookingRepository.findOverdue(now);
+
+            // PENDING
+            case "pending" -> bookings = bookingRepository.findAll().stream()
+                    .filter(b -> {
+                        boolean isPendingStr = "PENDING".equalsIgnoreCase(b.getStatus());
+                        boolean isPendingCalc = b.calculateStatus() == BookingStatus.PENDING;
+                        return isPendingStr || isPendingCalc;
+                    })
+                    .toList();
+
+            case "confirmed" -> bookings = bookingRepository.findAllConfirmed(threshold24h);
+            case "picked_up" -> bookings = bookingRepository.findAllPickedUp();
+            case "returned" -> bookings = bookingRepository.findAllReturned();
+            case "cancelled" -> bookings = bookingRepository.findAllCancelled(threshold24h);
+            case "expired" -> bookings = bookingRepository.findAllExpired(threshold24h);
+            case "rejected" -> bookings = bookingRepository.findAllRejected();
+
+            default -> throw new IllegalArgumentException(
+                    "Invalid status: " + status +
+                    ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected"
+            );
+        }
+
         return bookingMapper.toDTOList(bookings);
     }
-
-    switch (status.toLowerCase()) {
-        case "overdue" -> bookings = bookingRepository.findOverdue(now);
-
-        // PENDING
-        case "pending" -> bookings = bookingRepository.findAll().stream()
-                .filter(b -> {
-                    boolean isPendingStr = "PENDING".equalsIgnoreCase(b.getStatus());
-                    boolean isPendingCalc = b.calculateStatus() == BookingStatus.PENDING;
-                    return isPendingStr || isPendingCalc;
-                })
-                .toList();
-
-        case "confirmed" -> bookings = bookingRepository.findAllConfirmed(threshold24h);
-        case "picked_up" -> bookings = bookingRepository.findAllPickedUp();
-        case "returned" -> bookings = bookingRepository.findAllReturned();
-        case "cancelled" -> bookings = bookingRepository.findAllCancelled(threshold24h);
-        case "expired" -> bookings = bookingRepository.findAllExpired(threshold24h);
-        case "rejected" -> bookings = bookingRepository.findAllRejected();
-
-        default -> throw new IllegalArgumentException(
-                "Invalid status: " + status +
-                ". Valid values: overdue, pending, confirmed, picked_up, returned, cancelled, expired, rejected"
-        );
-    }
-
-    return bookingMapper.toDTOList(bookings);
-}
-
 
     /**
      * Holt bestaetigte, aber noch nicht abgeholte Buchungen (Zukuenftig)
@@ -321,14 +322,14 @@ public class BookingService {
         if (booking.getDeletedAt() != null) {
             throw new IllegalStateException("Cannot confirm cancelled booking");
         }
-        // Wenn Termine Da sind 
+        // Wenn Termine Da sind
         if (proposedPickups != null && !proposedPickups.isEmpty()) {
             LocalDateTime selectedDate = proposedPickups.get(0);
             booking.setConfirmedPickup(selectedDate);
             // Vorschläge zur Historie
             String pickupsJson = convertPickupsToJson(proposedPickups);
             booking.setProposedPickups(pickupsJson);
-            
+
             log.info("Booking {} sofort bestätigt für: {}", id, selectedDate);
         } else {
             throw new IllegalArgumentException("Ein Abholtermin wird benötigt, um die Anfrage anzunehmen.");
@@ -351,7 +352,7 @@ public class BookingService {
 
         List<LocalDateTime> proposedPickups = convertJsonToPickups(booking.getProposedPickups());
         if (!proposedPickups.contains(selectedPickup)) {
-            throw new RuntimeException("Selected pickup time is not in proposed pickups");
+            throw new ValidationException("Selected pickup time is not in proposed pickups");
         }
 
         booking.setConfirmedPickup(selectedPickup);
@@ -390,7 +391,7 @@ public class BookingService {
         BookingStatus status = booking.calculateStatus();
         if (status == BookingStatus.RETURNED || status == BookingStatus.REJECTED
                 || status == BookingStatus.CANCELLED || status == BookingStatus.EXPIRED) {
-            throw new RuntimeException("Booking is already closed");
+            throw new ConflictException("Booking is already closed");
         }
 
         String pickupsJson = convertPickupsToJson(proposedPickups);
@@ -411,11 +412,11 @@ public class BookingService {
         Booking booking = getBookingById(id);
 
         if (booking.getConfirmedPickup() == null) {
-            throw new RuntimeException("Noch keine Abholzeit bestätigt");
+            throw new ValidationException("Noch keine Abholzeit bestätigt");
         }
 
         if (booking.getDistributionDate() != null) {
-            throw new RuntimeException("Artikel bereits abgeholt");
+            throw new ConflictException("Artikel bereits abgeholt");
         }
 
         // DB-Status aktualisieren
@@ -464,12 +465,12 @@ public class BookingService {
 
         // Check: Wurde es abgeholt?
         if (booking.getDistributionDate() == null) {
-            throw new RuntimeException("Artikel wurde noch nicht abgeholt.");
+            throw new ValidationException("Artikel wurde noch nicht abgeholt.");
         }
 
         // Check: Bereits zurückgegeben?
         if (booking.getReturnDate() != null) {
-            throw new RuntimeException("Artikel wurde bereits zurueckgegeben.");
+            throw new ConflictException("Artikel wurde bereits zurueckgegeben.");
         }
 
         // Aktualisiere DB-Status
@@ -511,7 +512,7 @@ public class BookingService {
 
         BookingStatus status = booking.calculateStatus();
         if (status == BookingStatus.PICKED_UP || status == BookingStatus.RETURNED) {
-            throw new RuntimeException("Cannot cancel a booking that is already picked up or returned");
+            throw new ConflictException("Cannot cancel a booking that is already picked up or returned");
         }
 
         // DB Update

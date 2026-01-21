@@ -7,9 +7,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -17,6 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -37,7 +39,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Oeffentliche Endpoints
                         .requestMatchers("/", "/login", "/error").permitAll()
@@ -52,8 +54,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui.html/**", "/v3/api-docs/**").permitAll()
 
-                        // Bilder oeffentlich zugaenglich (fuer Katalog-Ansicht)
-                        .requestMatchers("/api/images/**").permitAll()
+                        // Bilder oeffentlich zugaenglich (fuer Katalog-Ansicht) - NUR GET
+                        .requestMatchers("GET", "/api/images/**").permitAll()
 
                         // Products GET-Endpoints oeffentlich (fuer Katalog)
                         .requestMatchers("GET", "/api/products/**").permitAll()
@@ -82,8 +84,24 @@ public class SecurityConfig {
                 // UserSyncFilter NACH der JWT-Authentifizierung einfuegen
                 .addFilterAfter(userSyncFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // H2 Console Frame-Options deaktivieren (nur Development!)
-        http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+        // Security Headers konfigurieren
+        http.headers(headers -> headers
+                // X-Content-Type-Options: nosniff - Verhindert MIME-Sniffing
+                .contentTypeOptions(contentTypeOptions -> {})
+
+                // X-XSS-Protection: 1; mode=block - XSS-Schutz in älteren Browsern
+                .xssProtection(xss -> xss
+                        .headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
+                )
+
+                // X-Frame-Options - Clickjacking-Schutz
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+
+                // Content-Security-Policy - Kontrolliert erlaubte Ressourcen
+                .contentSecurityPolicy(csp -> csp
+                        .policyDirectives("default-src 'self'; frame-ancestors 'none'; form-action 'self'")
+                )
+        );
 
         return http.build();
     }
@@ -103,8 +121,8 @@ public class SecurityConfig {
         // Erlaubte HTTP-Methoden
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // Erlaubte Headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Erlaubte Headers (nur die notwendigen)
+        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
 
         // Credentials erlauben (fuer Cookies/Auth-Header)
         configuration.setAllowCredentials(true);

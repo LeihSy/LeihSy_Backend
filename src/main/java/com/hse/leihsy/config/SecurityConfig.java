@@ -107,7 +107,7 @@ public class SecurityConfig {
         ));
 
         // Erlaubte HTTP-Methoden
-        configuration.setAllowedMethods(Arrays.asList("POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
         // Erlaubte Headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
